@@ -12,6 +12,17 @@ import (
 	"golang.org/x/text/transform"
 )
 
+type Competition struct {
+	Name     string `json:"competition_name"`
+	Date     string `json:"date"`
+	Details  string `json:"details"`
+	Location struct {
+		Latitude  string `json:"latitude"`
+		Longitude string `json:"longitude"`
+	} `json:"location"`
+	Link string `json:"registration_link"`
+}
+
 func GetCompetitionsFromWebsite(url string) error {
 	res, err := http.Get(url)
 	if err != nil {

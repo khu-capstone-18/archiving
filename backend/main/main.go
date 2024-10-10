@@ -27,6 +27,7 @@ func main() {
 	r.HandleFunc("/auth/login", handler.LoginHandler).Methods("POST")
 	r.HandleFunc("/auth/logout", handler.LogoutHandler).Methods("POST")
 	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
+	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
 
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("PUT")

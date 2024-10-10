@@ -33,3 +33,5 @@ func TestDB() error {
 }
 
 // curl -X POST -H "Content-Type: application/json" -d '{"username":"user","password":"password","email":"test@naver.com","nickname":"testnick"}' http://localhost:8080/auth/signup
+
+// curl -XPOST localhost:8080/competition -d '{"competition_name":"testn124","date":"2023-01-01","details":"testdetails", "location":{"latitude":"127.012458", "longitude":"134.532553"}, "registration_link":"https://example.com"}'

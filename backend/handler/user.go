@@ -69,10 +69,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
-	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
-	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
-
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
