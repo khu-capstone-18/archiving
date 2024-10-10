@@ -1,6 +1,8 @@
 module khu-capstone-18-backend
 
-go 1.21.1
+go 1.23
+
+toolchain go1.23.2
 
 require github.com/gorilla/mux v1.8.1
 

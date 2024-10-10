@@ -6,16 +6,12 @@ import (
 	"io"
 	"khu-capstone-18-backend/auth"
 	"khu-capstone-18-backend/database"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
 )
 
-func signUpHandler(w http.ResponseWriter, r *http.Request) {
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("SIGNUP HANDLER START")
 	req := struct {
 		Username string `json:"username"`
@@ -81,7 +77,7 @@ func signUpHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("LOGIN HANDLER START")
 	req := struct {
 		Username string `json:"username"`
@@ -141,7 +137,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 		fmt.Println("NO JWT TOKEN EXIST ERROR")
@@ -170,23 +166,4 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"message": "%s"}`, "Logout successful")))
-}
-
-func main() {
-	if err := database.ConnectDB(); err != nil {
-		fmt.Println("DB CONNECTION ERR:", err)
-		return
-	}
-
-	if err := database.TestDB(); err != nil {
-		fmt.Println("DB PING ERR:", err)
-		return
-	}
-
-	r := mux.NewRouter()
-	r.HandleFunc("/auth/signup", signUpHandler).Methods("POST")
-	r.HandleFunc("/auth/login", loginHandler).Methods("POST")
-	r.HandleFunc("/auth/logout", logoutHandler).Methods("POST")
-
-	log.Fatal(http.ListenAndServe(":8080", r))
 }
