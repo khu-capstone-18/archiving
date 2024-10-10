@@ -15,5 +15,6 @@ require (
 
 require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
+	github.com/rs/cors v1.11.1 // indirect
 	golang.org/x/net v0.30.0 // indirect
 )

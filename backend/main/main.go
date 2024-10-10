@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -42,5 +43,15 @@ func main() {
 	// r.HandleFunc("/users/{user_id}/competitions/{competition_Id}", handler.LogoutHandler).Methods("GET")
 	// r.HandleFunc("/users/{user_id}/competitions/{competition_Id}", handler.LogoutHandler).Methods("DELETE")
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+	})
+
+	handler := c.Handler(r)
+
+	log.Println("Server started on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }

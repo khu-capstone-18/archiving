@@ -9,7 +9,7 @@ var db *sql.DB
 
 const dbName = "testdb"
 const dbUser = "postgres"
-const dbPassword = "tester1234"
+const dbPassword = "gusqls457"
 const dbHost = "localhost"
 
 func ConnectDB() error {
