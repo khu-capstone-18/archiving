@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"khu-capstone-18-backend/database"
+	"khu-capstone-18-backend/handler"
 	"log"
 	"net/http"
 
@@ -22,10 +23,10 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.HandleFunc("/auth/signup", SignUpHandler).Methods("POST")
-	r.HandleFunc("/auth/login", LoginHandler).Methods("POST")
-	r.HandleFunc("/auth/logout", LogoutHandler).Methods("POST")
-	// r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
+	r.HandleFunc("/auth/signup", handler.SignUpHandler).Methods("POST")
+	r.HandleFunc("/auth/login", handler.LoginHandler).Methods("POST")
+	r.HandleFunc("/auth/logout", handler.LogoutHandler).Methods("POST")
+	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
 
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("PUT")
