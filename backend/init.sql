@@ -34,12 +34,23 @@ CREATE TABLE competitions (
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE routes (
+CREATE TABLE courses (
   id SERIAL PRIMARY KEY,
-  session_id INT NOT NULL,
+  user_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL, 
+  description TEXT DEFAULT "",
+  length FLOAT64 NOT NULL,
+  estimated_time VARCHAR(100) NOT NULL,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE points {
+  id SERIAL PRIMARY KEY,
+  course_id INT NOT NULL,
   latitude VARCHAR(100) NOT NULL,
   longitude VARCHAR(100) NOT NULL,
-  order INT DEFAULT NOT NULL,
-  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (session_id) REFERENCES sessions(id)
-);
+  start_point INT(1) DEFAULT FALSE,
+  end_point INT(1) DEFAULT FALSE,
+  order INT DEFAULT 0
+}

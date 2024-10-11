@@ -6,13 +6,28 @@ import (
 )
 
 type Session struct {
-	ID             string        `json:"session_id"`
+	ID             int           `json:"session_id"`
+	UserId         int           `json:"user_id"`
 	Distance       float64       `json:"total_distance"`
 	Time           string        `json:"total_time"`
 	StartTime      string        `json:"start_time"`
 	EndTime        string        `json:"end_time"`
 	AveragePace    time.Duration `json:"average_pace"`
 	CaloiresBurned int           `json:"calories_burned"`
+	Route          []*Point
+}
+
+type Realtime struct {
+	UserID         int           `json:"user_id"`
+	Distance       float64       `json:"total_distance"`
+	CaloiresBurned int           `json:"calories_burned"`
+	AveragePace    time.Duration `json:"average_pace"`
+	StartTime      string        `json:"start_time"`
+	ElapsedTime    string        `json:"elapsed_time"`
+	Latitude       float64       `json:"latitude"`
+	Longitude      float64       `json:"longitude"`
+	Route          []*Point      `json:"route"`
+	Exit           bool          `json:"exit"`
 }
 
 func GetBestRecordByUserId(userId string) (*Session, error) {
@@ -62,8 +77,8 @@ func GetSessions(userId string) (*[]Session, error) {
 	return &sessions, nil
 }
 
-func PostSession(userId string, ses *Session) error {
-	if _, err := db.Exec(`INSERT INTO sessions (user_id, distance, time, start_time, end_time, average_pace, calories_burned) VALUES (` + userId + `, '` + strconv.FormatFloat(ses.Distance, byte('f'), 2, 64) + `', '` + ses.Time + `', '` + ses.StartTime + `', '` + ses.EndTime + `', '` + ses.AveragePace.String() + `', '` + strconv.Itoa(ses.CaloiresBurned) + `')`); err != nil {
+func PostSession(ses *Session) error {
+	if _, err := db.Exec(`INSERT INTO sessions (user_id, distance, time, start_time, end_time, average_pace, calories_burned) VALUES (` + strconv.Itoa(ses.UserId) + `, '` + strconv.FormatFloat(ses.Distance, byte('f'), 2, 64) + `', '` + ses.Time + `', '` + ses.StartTime + `', '` + ses.EndTime + `', '` + ses.AveragePace.String() + `', '` + strconv.Itoa(ses.CaloiresBurned) + `')`); err != nil {
 		return err
 	}
 	return nil

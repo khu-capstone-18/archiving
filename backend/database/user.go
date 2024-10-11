@@ -1,6 +1,9 @@
 package database
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 type User struct {
 	UserID       string  `json:"user_id"`
@@ -72,9 +75,9 @@ func PutUser(userId, nickname, profileImage, weeklyGoal, weight string) error {
 	return nil
 }
 
-func GetUserWeight(userId string) (int, error) {
+func GetUserWeight(userId int) (int, error) {
 	weight := 0
-	r := db.QueryRow(`SELECT weight FROM users WHERE id='` + userId + `'`)
+	r := db.QueryRow(`SELECT weight FROM users WHERE id='` + strconv.Itoa(userId) + `'`)
 	if err := r.Scan(&weight); err != nil {
 		return weight, err
 	}
