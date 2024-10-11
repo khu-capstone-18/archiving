@@ -1,5 +1,7 @@
 package database
 
+import "strings"
+
 type User struct {
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
@@ -43,4 +45,25 @@ func GetUser(userId string) (*User, error) {
 		return &user, err
 	}
 	return &user, nil
+}
+
+func PutUser(userId, nickname, profileImage, weeklyGoal string) error {
+	query := []string{}
+	if nickname != "" {
+		query = append(query, `nickname = '`+nickname+`'`)
+	}
+	if profileImage != "" {
+		query = append(query, `profile_image = '`+profileImage+`'`)
+	}
+	if weeklyGoal != "" {
+		query = append(query, `weekly_goal = '`+weeklyGoal+`'`)
+	}
+	c := strings.Join(query, ", ")
+
+	_, err := db.Exec(`UPDATE users SET ` + c + ` WHERE id='` + userId + `'`)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -30,6 +30,8 @@ func main() {
 	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
 	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
 	r.HandleFunc("/user/profile/{userId}", handler.ProfileHandler).Methods("GET")
+	r.HandleFunc("/user/profile/{userId}", handler.UpdateProfileHandler).Methods("PUT")
+	// r.HandleFunc("/test/{userId}", handler.UpdateProfileHandler).Methods("GET")
 
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("PUT")

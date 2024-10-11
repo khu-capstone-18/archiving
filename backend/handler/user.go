@@ -263,6 +263,52 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+		fmt.Println("NO JWT TOKEN EXIST ERROR")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Bearer 토큰 추출
+	t := authHeader[7:]
+
+	_, err := auth.ValidateJwtToken(t)
+	if err != nil {
+		fmt.Println("JWT TOKEN VALIDATION ERR:", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if err := database.PutUser(userId, "nickchange", "test111", ""); err != nil {
+		fmt.Println("PUT USER PROFILE ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 응답
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "Profile updated successfully.",
+	}
+
+	resp, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("JSON MARSHALING ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
 func GetBestRecordByUserId(userId string) (*database.Session, error) {
 	return database.GetBestRecordByUserId(userId)
 }
