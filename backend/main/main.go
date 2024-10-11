@@ -29,10 +29,10 @@ func main() {
 	r.HandleFunc("/{any:.+}", handler.OptionHandler).Methods("OPTIONS")
 	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
 	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
+	r.HandleFunc("/user/profile/{userId}", handler.ProfileHandler).Methods("GET")
 
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("PUT")
-	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("GET")
 	// r.HandleFunc("/user/{user_id}/sessions", handler.LogoutHandler).Methods("GET")
 	// r.HandleFunc("/user/{user_id}/session", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/{user_id}/real-time", handler.LogoutHandler).Methods("POST")

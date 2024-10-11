@@ -1,5 +1,14 @@
 package database
 
+type User struct {
+	UserID       string `json:"user_id"`
+	Username     string `json:"username"`
+	ProfileImage string `json:"profile_image"`
+	WeeklyGoal   string `json:"weekly_goal"`
+	Email        string `json:"email"`
+	Nickname     string `json:"nickname"`
+}
+
 func CreateUser(username, password, email, nickname string) error {
 	_, err := db.Exec(`INSERT INTO users (username, password, email, nickname) VALUES ('` + username + `', '` + password + `', '` + email + `', '` + nickname + `')`)
 	if err != nil {
@@ -25,4 +34,13 @@ func GetPassword(username string) (string, error) {
 		return pw, err
 	}
 	return pw, nil
+}
+
+func GetUser(userId string) (*User, error) {
+	user := User{}
+	r := db.QueryRow(`SELECT username, email, nickname, profile_image, weekly_goal FROM users WHERE id='` + userId + `'`)
+	if err := r.Scan(&user.Username, &user.Email, &user.Nickname, &user.ProfileImage, &user.WeeklyGoal); err != nil {
+		return &user, err
+	}
+	return &user, nil
 }
