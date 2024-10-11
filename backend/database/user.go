@@ -3,12 +3,13 @@ package database
 import "strings"
 
 type User struct {
-	UserID       string `json:"user_id"`
-	Username     string `json:"username"`
-	ProfileImage string `json:"profile_image"`
-	WeeklyGoal   string `json:"weekly_goal"`
-	Email        string `json:"email"`
-	Nickname     string `json:"nickname"`
+	UserID       string  `json:"user_id"`
+	Username     string  `json:"username"`
+	ProfileImage string  `json:"profile_image"`
+	WeeklyGoal   string  `json:"weekly_goal"`
+	Email        string  `json:"email"`
+	Nickname     string  `json:"nickname"`
+	Weight       float64 `json:"weight"`
 }
 
 func CreateUser(username, password, email, nickname string) error {
@@ -40,14 +41,14 @@ func GetPassword(username string) (string, error) {
 
 func GetUser(userId string) (*User, error) {
 	user := User{}
-	r := db.QueryRow(`SELECT username, email, nickname, profile_image, weekly_goal FROM users WHERE id='` + userId + `'`)
-	if err := r.Scan(&user.Username, &user.Email, &user.Nickname, &user.ProfileImage, &user.WeeklyGoal); err != nil {
+	r := db.QueryRow(`SELECT username, email, nickname, profile_image, weekly_goal, weight FROM users WHERE id='` + userId + `'`)
+	if err := r.Scan(&user.Username, &user.Email, &user.Nickname, &user.ProfileImage, &user.WeeklyGoal, &user.Weight); err != nil {
 		return &user, err
 	}
 	return &user, nil
 }
 
-func PutUser(userId, nickname, profileImage, weeklyGoal string) error {
+func PutUser(userId, nickname, profileImage, weeklyGoal, weight string) error {
 	query := []string{}
 	if nickname != "" {
 		query = append(query, `nickname = '`+nickname+`'`)
@@ -58,6 +59,9 @@ func PutUser(userId, nickname, profileImage, weeklyGoal string) error {
 	if weeklyGoal != "" {
 		query = append(query, `weekly_goal = '`+weeklyGoal+`'`)
 	}
+	if weight != "" {
+		query = append(query, `weight = '`+weight+`'`)
+	}
 	c := strings.Join(query, ", ")
 
 	_, err := db.Exec(`UPDATE users SET ` + c + ` WHERE id='` + userId + `'`)
@@ -66,4 +70,13 @@ func PutUser(userId, nickname, profileImage, weeklyGoal string) error {
 	}
 
 	return nil
+}
+
+func GetUserWeight(userId string) (int, error) {
+	weight := 0
+	r := db.QueryRow(`SELECT weight FROM users WHERE id='` + userId + `'`)
+	if err := r.Scan(&weight); err != nil {
+		return weight, err
+	}
+	return weight, nil
 }

@@ -5,6 +5,7 @@ CREATE TABLE users (
 	email VARCHAR(100) NOT NULL,
 	nickname VARCHAR(100) NOT NULL,
   profile_image TEXT DEFAULT '',
+  weight INT NOT NULL,
   weekly_goal VARCHAR(100) DEFAULT 0,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -31,4 +32,14 @@ CREATE TABLE competitions (
 	longitude VARCHAR(100) NOT NULL,
   link VARCHAR(100) NOT NULL,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE routes (
+  id SERIAL PRIMARY KEY,
+  session_id INT NOT NULL,
+  latitude VARCHAR(100) NOT NULL,
+  longitude VARCHAR(100) NOT NULL,
+  order INT DEFAULT NOT NULL,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (session_id) REFERENCES sessions(id)
 );

@@ -229,8 +229,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		TotalDistance string `json:"total_distance"`
 		TotalTime     string `json:"total_time"`
 		BestRecord    struct {
-			Distance string `json:"distance"`
-			Time     string `json:"time"`
+			Distance float64 `json:"distance"`
+			Time     string  `json:"time"`
 		} `json:"best_record"`
 		WeeklyGoal string `json:"weekly_goal"`
 		Nickname   string `json:"nickname"`
@@ -241,8 +241,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		TotalDistance: strconv.FormatFloat(totalDistance, byte('f'), 2, 64),
 		TotalTime:     totalTime.String(),
 		BestRecord: struct {
-			Distance string "json:\"distance\""
-			Time     string "json:\"time\""
+			Distance float64 "json:\"distance\""
+			Time     string  "json:\"time\""
 		}{
 			Distance: record.Distance,
 			Time:     record.Time,
@@ -284,7 +284,15 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := database.PutUser(userId, "nickchange", "test111", ""); err != nil {
+	b, _ := io.ReadAll(r.Body)
+	req := database.User{}
+	if err := json.Unmarshal(b, &req); err != nil {
+		fmt.Println("UNMARSHAL ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := database.PutUser(userId, req.Nickname, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
 		fmt.Println("PUT USER PROFILE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -323,8 +331,7 @@ func GetTotalDistanceAndTime(userId string) (totalDistance float64, totalTime ti
 	var t time.Duration
 
 	for _, r := range *records {
-		f, _ := strconv.ParseFloat(r.Distance, 64)
-		d += f
+		d += r.Distance
 		tmp, _ := time.ParseDuration(r.Time)
 		t += tmp
 	}

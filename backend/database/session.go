@@ -1,13 +1,18 @@
 package database
 
+import (
+	"strconv"
+	"time"
+)
+
 type Session struct {
-	ID             string `json:"session_id"`
-	Distance       string `json:"total_distance"`
-	Time           string `json:"total_time"`
-	StartTime      string `json:"start_time"`
-	EndTime        string `json:"end_time"`
-	AveragePace    string `json:"average_pace"`
-	CaloiresBurned int    `json:"calories_burned"`
+	ID             string        `json:"session_id"`
+	Distance       float64       `json:"total_distance"`
+	Time           string        `json:"total_time"`
+	StartTime      string        `json:"start_time"`
+	EndTime        string        `json:"end_time"`
+	AveragePace    time.Duration `json:"average_pace"`
+	CaloiresBurned int           `json:"calories_burned"`
 }
 
 func GetBestRecordByUserId(userId string) (*Session, error) {
@@ -55,4 +60,11 @@ func GetSessions(userId string) (*[]Session, error) {
 		sessions = append(sessions, session)
 	}
 	return &sessions, nil
+}
+
+func PostSession(userId string, ses *Session) error {
+	if _, err := db.Exec(`INSERT INTO sessions (user_id, distance, time, start_time, end_time, average_pace, calories_burned) VALUES (` + userId + `, '` + strconv.FormatFloat(ses.Distance, byte('f'), 2, 64) + `', '` + ses.Time + `', '` + ses.StartTime + `', '` + ses.EndTime + `', '` + ses.AveragePace.String() + `', '` + strconv.Itoa(ses.CaloiresBurned) + `')`); err != nil {
+		return err
+	}
+	return nil
 }
