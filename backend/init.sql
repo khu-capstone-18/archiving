@@ -4,7 +4,18 @@ CREATE TABLE users (
 	password VARCHAR(100) NOT NULL,
 	email VARCHAR(100) NOT NULL,
 	nickname VARCHAR(100) NOT NULL,
+  profile_image TEXT DEFAULT '',
+  weekly_goal INT DEFAULT 0,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL,
+  distance FLOAT NOT NULL,
+  time VARCHAR(100) NOT NULL,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE competitions (
