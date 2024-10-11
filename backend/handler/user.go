@@ -69,6 +69,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -129,6 +130,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
 	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
@@ -160,6 +162,17 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 클라이언트에게 만료된 토큰 반환
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"message": "%s"}`, "Logout successful")))
+}
+
+func OptionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	w.WriteHeader(http.StatusOK)
+	return
 }
