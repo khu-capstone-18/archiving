@@ -1,8 +1,13 @@
 package database
 
 type Session struct {
-	Distance string `json:"distance"`
-	Time     string `json:"time"`
+	ID             string `json:"session_id"`
+	Distance       string `json:"total_distance"`
+	Time           string `json:"total_time"`
+	StartTime      string `json:"start_time"`
+	EndTime        string `json:"end_time"`
+	AveragePace    string `json:"average_pace"`
+	CaloiresBurned int    `json:"calories_burned"`
 }
 
 func GetBestRecordByUserId(userId string) (*Session, error) {
@@ -31,4 +36,23 @@ func GetTotalSessions(userId string) (*[]Session, error) {
 		records = append(records, record)
 	}
 	return &records, nil
+}
+
+func GetSessions(userId string) (*[]Session, error) {
+	sessions := []Session{}
+	session := Session{}
+	r, err := db.Query(`SELECT id, distance, time, start_time, end_time, average_pace, calories_burned FROM sessions WHERE user_id=` + userId)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	for r.Next() {
+		err := r.Scan(&session.ID, &session.Distance, &session.Time, &session.StartTime, &session.EndTime, &session.AveragePace, &session.AveragePace)
+		if err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, session)
+	}
+	return &sessions, nil
 }

@@ -5,7 +5,7 @@ CREATE TABLE users (
 	email VARCHAR(100) NOT NULL,
 	nickname VARCHAR(100) NOT NULL,
   profile_image TEXT DEFAULT '',
-  weekly_goal INT DEFAULT 0,
+  weekly_goal VARCHAR(100) DEFAULT 0,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -14,6 +14,10 @@ CREATE TABLE sessions (
   user_id INT NOT NULL,
   distance FLOAT NOT NULL,
   time VARCHAR(100) NOT NULL,
+  start_time VARCHAR(100) NOT NULL,
+  end_time VARCHAR(100) NOT NULL,
+  average_pace VARCHAR(100) NOT NULL,
+  calories_burned VARCHAR(100) NOT NULL,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
