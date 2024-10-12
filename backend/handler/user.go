@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"khu-capstone-18-backend/auth"
-	"khu-capstone-18-backend/database"
+	"khu-capstone-18-backend/repository"
 	"net/http"
 	"strconv"
 	"time"
@@ -31,14 +31,14 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// DB에 유저 삽입
-	if err := database.CreateUser(req.Username, req.Password, req.Email, req.Nickname); err != nil {
+	if err := repository.CreateUser(req.Username, req.Password, req.Email, req.Nickname); err != nil {
 		fmt.Println("CREATE USER ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// DB에서 유저ID 조회
-	id, err := database.GetUserID(req.Username)
+	id, err := repository.GetUserID(req.Username)
 	if err != nil {
 		fmt.Println("GET UESR ID ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -91,7 +91,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pw, err := database.GetPassword(req.Username)
+	pw, err := repository.GetPassword(req.Username)
 	if err != nil {
 		fmt.Println("GET PASSWORD ERR:", err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -200,7 +200,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := database.GetUser(userId)
+	u, err := repository.GetUser(userId)
 	if err != nil {
 		fmt.Println("GET USER PROFILE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -285,14 +285,14 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := io.ReadAll(r.Body)
-	req := database.User{}
+	req := repository.User{}
 	if err := json.Unmarshal(b, &req); err != nil {
 		fmt.Println("UNMARSHAL ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if err := database.PutUser(userId, req.Nickname, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
+	if err := repository.PutUser(userId, req.Nickname, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
 		fmt.Println("PUT USER PROFILE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -317,12 +317,12 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func GetBestRecordByUserId(userId string) (*database.Session, error) {
-	return database.GetBestRecordByUserId(userId)
+func GetBestRecordByUserId(userId string) (*repository.Session, error) {
+	return repository.GetBestRecordByUserId(userId)
 }
 
 func GetTotalDistanceAndTime(userId string) (totalDistance float64, totalTime time.Duration, err error) {
-	records, err := database.GetTotalSessions(userId)
+	records, err := repository.GetTotalSessions(userId)
 	if err != nil {
 		return 0, 0, err
 	}

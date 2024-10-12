@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"khu-capstone-18-backend/database"
 	"khu-capstone-18-backend/handler"
+	"khu-capstone-18-backend/repository"
 	"log"
 	"net/http"
 
@@ -12,12 +12,12 @@ import (
 )
 
 func main() {
-	if err := database.ConnectDB(); err != nil {
+	if err := repository.ConnectDB(); err != nil {
 		fmt.Println("DB CONNECTION ERR:", err)
 		return
 	}
 
-	if err := database.TestDB(); err != nil {
+	if err := repository.TestDB(); err != nil {
 		fmt.Println("DB PING ERR:", err)
 		return
 	}

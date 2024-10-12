@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"khu-capstone-18-backend/competition"
-	"khu-capstone-18-backend/database"
+	"khu-capstone-18-backend/repository"
 	"net/http"
 	"strconv"
 )
@@ -32,14 +32,14 @@ func PostCompetitionHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(req.Location.Latitude)
 
 	// DB에 대회정보 삽입
-	if err := database.CreateCompetition(req); err != nil {
+	if err := repository.CreateCompetition(req); err != nil {
 		fmt.Println("CREATE COMPETITION ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// DB에서 대회ID 조회
-	id, err := database.GetCompetitionID(req.Name, req.Date)
+	id, err := repository.GetCompetitionID(req.Name, req.Date)
 	if err != nil {
 		fmt.Println("GET COMPETITION ID ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)

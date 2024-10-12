@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"khu-capstone-18-backend/auth"
-	"khu-capstone-18-backend/database"
+	"khu-capstone-18-backend/repository"
 	"net/http"
 	"strconv"
 
@@ -30,10 +30,10 @@ func PostCourseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := database.Course{
-		StartPoint: &database.Point{},
-		EndPoint:   &database.Point{},
-		Route:      []*database.Point{},
+	req := repository.Course{
+		StartPoint: &repository.Point{},
+		EndPoint:   &repository.Point{},
+		Route:      []*repository.Point{},
 	}
 
 	b, _ := io.ReadAll(r.Body)
@@ -43,14 +43,14 @@ func PostCourseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courseId := database.PostCourse(&req)
+	courseId := repository.PostCourse(&req)
 	if err != nil {
 		fmt.Println("POST COURSE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = database.PostPoints(&req, courseId)
+	err = repository.PostPoints(&req, courseId)
 	if err != nil {
 		fmt.Println("POST POINTS ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -99,7 +99,7 @@ func GetCoursesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	crs, err := database.GetCourses(userId)
+	crs, err := repository.GetCourses(userId)
 	if err != nil {
 		fmt.Println("GET USER COURSES ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)

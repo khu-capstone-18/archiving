@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"khu-capstone-18-backend/auth"
-	"khu-capstone-18-backend/database"
+	"khu-capstone-18-backend/repository"
 	"math"
 	"net/http"
 	"strconv"
@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var channel = make(chan database.Realtime)
+var channel = make(chan repository.Realtime)
 
 func GetSessionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -37,7 +37,7 @@ func GetSessionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessions, err := database.GetSessions(userId)
+	sessions, err := repository.GetSessions(userId)
 	if err != nil {
 		fmt.Println("GET USER SESSIONS ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -79,7 +79,7 @@ func StartRealtimeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := database.Point{}
+	req := repository.Point{}
 	b, _ := io.ReadAll(r.Body)
 	if err := json.Unmarshal(b, &req); err != nil {
 		fmt.Println("UNMARSHAL ERR:", err)
@@ -87,17 +87,17 @@ func StartRealtimeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rt := database.Realtime{
+	rt := repository.Realtime{
 		UserID:    id,
 		Latitude:  req.Latitude,
 		Longitude: req.Longitude,
 		StartTime: time.Now().Format("15h04m05s"),
 		Distance:  0.00,
 		Exit:      false,
-		Route:     []*database.Point{},
+		Route:     []*repository.Point{},
 	}
 
-	rt.Route = append(rt.Route, &database.Point{
+	rt.Route = append(rt.Route, &repository.Point{
 		Latitude:  req.Latitude,
 		Longitude: req.Longitude,
 	})
@@ -108,12 +108,12 @@ func StartRealtimeHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func realtimeChannel(rt database.Realtime) error {
+func realtimeChannel(rt repository.Realtime) error {
 	crs := rt
-	weight, _ := database.GetUserWeight(crs.UserID)
+	weight, _ := repository.GetUserWeight(crs.UserID)
 	for req := range channel {
 		if req.Exit {
-			req := database.Session{
+			req := repository.Session{
 				Distance:       rt.Distance,
 				Time:           rt.ElapsedTime,
 				StartTime:      rt.StartTime,
@@ -122,7 +122,7 @@ func realtimeChannel(rt database.Realtime) error {
 				CaloiresBurned: rt.CaloiresBurned,
 				Route:          rt.Route,
 			}
-			err := database.PostSession(&req)
+			err := repository.PostSession(&req)
 			if err != nil {
 				fmt.Println("POST USER SESSION ERR:", err)
 				return err
@@ -135,7 +135,7 @@ func realtimeChannel(rt database.Realtime) error {
 		crs.ElapsedTime = getElapsedTime(crs.StartTime)
 		crs.AveragePace = getAveragePace(crs.ElapsedTime, crs.Distance)
 		crs.CaloiresBurned = int(float64(weight) * req.Distance)
-		crs.Route = append(crs.Route, &database.Point{
+		crs.Route = append(crs.Route, &repository.Point{
 			Latitude:  req.Latitude,
 			Longitude: req.Longitude,
 		})
