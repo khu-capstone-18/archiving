@@ -13,6 +13,7 @@ CREATE TABLE users (
 CREATE TABLE sessions (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL,
+  course_id INT NOT NULL,
   distance FLOAT NOT NULL,
   time VARCHAR(100) NOT NULL,
   start_time VARCHAR(100) NOT NULL,
@@ -20,7 +21,8 @@ CREATE TABLE sessions (
   average_pace VARCHAR(100) NOT NULL,
   calories_burned VARCHAR(100) NOT NULL,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (course_id) REFERENCES courses(id)
 );
 
 CREATE TABLE competitions (
