@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/pages/profile_page.dart';
+import 'package:frontend/pages/profile_edit_page.dart';  // 최신 코드 유지
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   String errorMessage = '';
   ApiService apiService = ApiService();
 
+  // 로그인 후 프로필 입력 페이지로 이동
   Future<void> login() async {
     final response = await apiService.login(
         usernameController.text, passwordController.text);
@@ -21,11 +23,18 @@ class _LoginPageState extends State<LoginPage> {
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       String token = responseData['token'];
+      String userId = responseData['user_id'];
 
+      // user_id와 token을 SharedPreferences에 저장
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', userId);
+      await prefs.setString('token', token);
+
+      // 프로필 입력 페이지로 이동
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => ProfilePage(token: token),
+          builder: (context) => ProfileEditPage(),  // 최신 코드 유지
         ),
       );
     } else {

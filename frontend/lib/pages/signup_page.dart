@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:frontend/pages/profile_edit_page.dart'; // 프로필 입력 페이지로 이동
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
 
 class SignupPage extends StatefulWidget {
   @override
@@ -13,9 +15,9 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController nicknameController = TextEditingController();
   String errorMessage = '';
-  String successMessage = '';
   ApiService apiService = ApiService();
 
+  // 회원가입 후 자동 로그인 처리 함수
   Future<void> signup() async {
     final response = await apiService.signup(
       usernameController.text,
@@ -25,17 +27,25 @@ class _SignupPageState extends State<SignupPage> {
     );
 
     if (response.statusCode == 200) {
-      setState(() {
-        successMessage = 'Signup successful! Please log in.';
-        errorMessage = '';
-      });
-      Future.delayed(Duration(seconds: 2), () {
-        Navigator.pop(context);
-      });
+      final responseData = json.decode(response.body);
+      String token = responseData['token'];
+      String userId = responseData['user_id'];
+
+      // user_id와 token을 SharedPreferences에 저장
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', userId);
+      await prefs.setString('token', token);
+
+      // 회원가입 성공 후 자동으로 프로필 입력 화면으로 이동 (token과 userId 전달 불필요)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileEditPage(),
+        ),
+      );
     } else {
       setState(() {
         errorMessage = 'Signup failed';
-        successMessage = '';
       });
     }
   }
@@ -77,11 +87,6 @@ class _SignupPageState extends State<SignupPage> {
               Text(
                 errorMessage,
                 style: TextStyle(color: Colors.red),
-              ),
-            if (successMessage.isNotEmpty)
-              Text(
-                successMessage,
-                style: TextStyle(color: Colors.green),
               ),
           ],
         ),
