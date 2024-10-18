@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"io"
 	"khu-capstone-18-backend/auth"
-	"khu-capstone-18-backend/database"
+	"khu-capstone-18-backend/repository"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,14 +31,14 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// DB에 유저 삽입
-	if err := database.CreateUser(req.Username, req.Password, req.Email, req.Nickname); err != nil {
+	if err := repository.CreateUser(req.Username, req.Password, req.Email, req.Nickname); err != nil {
 		fmt.Println("CREATE USER ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// DB에서 유저ID 조회
-	id, err := database.GetUserID(req.Username)
+	id, err := repository.GetUserID(req.Username)
 	if err != nil {
 		fmt.Println("GET UESR ID ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -69,6 +71,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
@@ -88,10 +91,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pw, err := database.GetPassword(req.Username)
+	pw, err := repository.GetPassword(req.Username)
 	if err != nil {
 		fmt.Println("GET PASSWORD ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -129,6 +132,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
 	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
@@ -160,6 +164,177 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 클라이언트에게 만료된 토큰 반환
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{"message": "%s"}`, "Logout successful")))
+}
+
+func OptionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+	w.WriteHeader(http.StatusOK)
+	return
+}
+
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+		fmt.Println("NO JWT TOKEN EXIST ERROR")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Bearer 토큰 추출
+	t := authHeader[7:]
+
+	_, err := auth.ValidateJwtToken(t)
+	if err != nil {
+		fmt.Println("JWT TOKEN VALIDATION ERR:", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	u, err := repository.GetUser(userId)
+	if err != nil {
+		fmt.Println("GET USER PROFILE ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	record, err := GetBestRecordByUserId(userId)
+	if err != nil {
+		fmt.Println("GET USER'S BEST RECORD ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	totalDistance, totalTime, err := GetTotalDistanceAndTime(userId)
+	if err != nil {
+		fmt.Println("GET USER'S TOTAL RECORD DATA ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 응답
+	response := struct {
+		UserID        string `json:"user_id"`
+		Username      string `json:"username"`
+		ProfileImage  string `json:"profile_image"`
+		TotalDistance string `json:"total_distance"`
+		TotalTime     string `json:"total_time"`
+		BestRecord    struct {
+			Distance float64 `json:"distance"`
+			Time     string  `json:"time"`
+		} `json:"best_record"`
+		WeeklyGoal string `json:"weekly_goal"`
+		Nickname   string `json:"nickname"`
+	}{
+		UserID:        userId,
+		Username:      u.Username,
+		ProfileImage:  u.ProfileImage,
+		TotalDistance: strconv.FormatFloat(totalDistance, byte('f'), 2, 64),
+		TotalTime:     totalTime.String(),
+		BestRecord: struct {
+			Distance float64 "json:\"distance\""
+			Time     string  "json:\"time\""
+		}{
+			Distance: record.Distance,
+			Time:     record.Time,
+		},
+		WeeklyGoal: u.WeeklyGoal,
+		Nickname:   u.Nickname,
+	}
+
+	resp, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("JSON MARSHALING ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
+func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId := vars["userId"]
+
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+		fmt.Println("NO JWT TOKEN EXIST ERROR")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Bearer 토큰 추출
+	t := authHeader[7:]
+
+	_, err := auth.ValidateJwtToken(t)
+	if err != nil {
+		fmt.Println("JWT TOKEN VALIDATION ERR:", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	b, _ := io.ReadAll(r.Body)
+	req := repository.User{}
+	if err := json.Unmarshal(b, &req); err != nil {
+		fmt.Println("UNMARSHAL ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := repository.PutUser(userId, req.Nickname, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
+		fmt.Println("PUT USER PROFILE ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// 응답
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "Profile updated successfully.",
+	}
+
+	resp, err := json.Marshal(response)
+	if err != nil {
+		fmt.Println("JSON MARSHALING ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
+func GetBestRecordByUserId(userId string) (*repository.Session, error) {
+	return repository.GetBestRecordByUserId(userId)
+}
+
+func GetTotalDistanceAndTime(userId string) (totalDistance float64, totalTime time.Duration, err error) {
+	records, err := repository.GetTotalSessions(userId)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	d := 0.0
+	var t time.Duration
+
+	for _, r := range *records {
+		d += r.Distance
+		tmp, _ := time.ParseDuration(r.Time)
+		t += tmp
+	}
+
+	return d, t, nil
 }

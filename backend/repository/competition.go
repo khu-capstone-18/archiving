@@ -1,4 +1,4 @@
-package database
+package repository
 
 import (
 	"khu-capstone-18-backend/competition"

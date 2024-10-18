@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, // 디버그 배너를 제거하는 옵션
       initialRoute: '/',
       routes: {
         '/': (context) => LoginPage(),

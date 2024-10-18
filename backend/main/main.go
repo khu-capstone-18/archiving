@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"khu-capstone-18-backend/database"
 	"khu-capstone-18-backend/handler"
+	"khu-capstone-18-backend/repository"
 	"log"
 	"net/http"
 
@@ -12,12 +12,12 @@ import (
 )
 
 func main() {
-	if err := database.ConnectDB(); err != nil {
+	if err := repository.ConnectDB(); err != nil {
 		fmt.Println("DB CONNECTION ERR:", err)
 		return
 	}
 
-	if err := database.TestDB(); err != nil {
+	if err := repository.TestDB(); err != nil {
 		fmt.Println("DB PING ERR:", err)
 		return
 	}
@@ -26,17 +26,21 @@ func main() {
 	r.HandleFunc("/auth/signup", handler.SignUpHandler).Methods("POST")
 	r.HandleFunc("/auth/login", handler.LoginHandler).Methods("POST")
 	r.HandleFunc("/auth/logout", handler.LogoutHandler).Methods("POST")
+	r.HandleFunc("/{any:.+}", handler.OptionHandler).Methods("OPTIONS")
 	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
 	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
+	r.HandleFunc("/users/{userId}/profile", handler.ProfileHandler).Methods("GET")
+	r.HandleFunc("/users/{userId}/profile", handler.UpdateProfileHandler).Methods("PUT")
+	r.HandleFunc("/users/{userId}/sessions", handler.GetSessionHandler).Methods("GET")
+	r.HandleFunc("/users/{userId}/real-time", handler.StartRealtimeHandler).Methods("POST")
+	r.HandleFunc("/course", handler.PostCourseHandler).Methods("POST")
+	r.HandleFunc("/users/{userId}/courses", handler.GetCoursesHandler).Methods("GET")
+
+	// r.HandleFunc("/test/{userId}", handler.UpdateProfileHandler).Methods("GET")
 
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("PUT")
-	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("GET")
-	// r.HandleFunc("/user/{user_id}/sessions", handler.LogoutHandler).Methods("GET")
-	// r.HandleFunc("/user/{user_id}/session", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/{user_id}/real-time", handler.LogoutHandler).Methods("POST")
-	// r.HandleFunc("/courses", handler.LogoutHandler).Methods("GET")
-	// r.HandleFunc("/courses", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/competition", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/users/{user_id}/competitions/{competition_Id}", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/users/{user_id}/competitions/{competition_Id}", handler.LogoutHandler).Methods("GET")

@@ -61,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('User Profile'),
-        actions: <Widget>[
+        actions: [
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: logout, // 로그아웃 버튼 클릭 시 실행

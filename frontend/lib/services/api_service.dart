@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // SharedPreference
 class ApiService {
   final String baseUrl = 'http://localhost:8080';
 
+  // 회원가입 API
   Future<http.Response> signup(
       String username, String password, String email, String nickname) async {
     final url = Uri.parse('$baseUrl/auth/signup');
@@ -110,7 +111,6 @@ class ApiService {
     return response;
   }
 
-  // 러닝 세션 저장 API
   // 러닝 세션 저장 API
   Future<http.Response> saveRunningSession({
     required String token,

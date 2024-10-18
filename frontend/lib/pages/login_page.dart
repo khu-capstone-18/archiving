@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/pages/profile_edit_page.dart';
+import 'package:frontend/pages/profile_edit_page.dart';  // 최신 코드 유지
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,11 +30,11 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString('user_id', userId);
       await prefs.setString('token', token);
 
-      // 프로필 입력 페이지로 이동 (token과 userId 전달 불필요)
+      // 프로필 입력 페이지로 이동
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => ProfileEditPage(),
+          builder: (context) => ProfileEditPage(),  // 최신 코드 유지
         ),
       );
     } else {
@@ -74,6 +74,12 @@ class _LoginPageState extends State<LoginPage> {
                 errorMessage,
                 style: TextStyle(color: Colors.red),
               ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/signup');
+              },
+              child: Text('Don\'t have an account? Sign up'),
+            ),
           ],
         ),
       ),
