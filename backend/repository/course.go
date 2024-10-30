@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"fmt"
+	"khu-capstone-18-backend/model"
 	"strconv"
 	"time"
 )
@@ -51,4 +53,44 @@ func PostPoints(crs *Course, courseId int) error {
 
 func GetCourses(userId string) ([]*Course, error) {
 	return nil, nil
+}
+
+func CreateCourseStart(crs *model.CourseTest) error {
+	if err := createCourse(crs); err != nil {
+		fmt.Println(fmt.Println("Create Course Start Handler Err:", err))
+	}
+	return nil
+}
+
+func CreateCourseEnd(crs *model.CourseTest) (*[]*model.CourseTest, error) {
+	if err := createCourse(crs); err != nil {
+		fmt.Println(fmt.Println("Create Course Start Handler Err:", err))
+		return nil, err
+	}
+
+	return GetCoursesTest(crs)
+}
+
+func createCourse(crs *model.CourseTest) error {
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, latitude, longitude, current_time) VALUES (` + crs.CourseID + `, '` + crs.CourseName + `', '` + crs.UserID + `', '` + strconv.Itoa(int(crs.Location.Latitude)) + `', '` + strconv.Itoa(int(crs.Location.Longitude)) + `', '` + crs.CurrentTime.String() + `')`); err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetCoursesTest(crs *model.CourseTest) (*[]*model.CourseTest, error) {
+	r, err := db.Query(`SELECT id, name, creator_id, latitude, longitude, current_time FROM coursestest WHERE id = '` + crs.CourseID + `' ORDER BY current_time DESC`)
+	if err != nil {
+		return nil, err
+	}
+
+	course := model.CourseTest{}
+	courses := []*model.CourseTest{}
+
+	for r.Next() {
+		r.Scan(&course.CourseID, &course.CourseName, &course.UserID, &course.Location.Latitude, &course.Location.Longitude, &course.CurrentTime)
+		courses = append(courses, &course)
+	}
+
+	return &courses, nil
 }

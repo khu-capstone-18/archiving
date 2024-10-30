@@ -56,3 +56,14 @@ CREATE TABLE points {
   end_point INT(1) DEFAULT FALSE,
   order INT DEFAULT 0
 }
+
+
+CREATE TABLE coursestest (
+  id VARCHAR(100) PRIMARY KEY,
+  name VARCHAR(100) DEFAULT "",
+  creator_id INT NOT NULL,
+  latitude VARCHAR(100) NOT NULL, 
+  longitude VARCHAR(100) NOT NULL, 
+  current_time VARCHAR(100) NOT NULL
+  -- FOREIGN KEY (creator_id) REFERENCES users(id)
+);

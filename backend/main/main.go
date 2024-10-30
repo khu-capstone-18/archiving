@@ -36,6 +36,10 @@ func main() {
 	r.HandleFunc("/course", handler.PostCourseHandler).Methods("POST")
 	r.HandleFunc("/users/{userId}/courses", handler.GetCoursesHandler).Methods("GET")
 
+	r.HandleFunc("/course/start", handler.CreateCourseStartHandler).Methods("POST")
+	r.HandleFunc("/course/{courseId}/end", handler.CreateCourseEndHandler).Methods("POST")
+	r.HandleFunc("/course/{courseId}/location", handler.CreateCourseEndHandler).Methods("POST")
+
 	// r.HandleFunc("/test/{userId}", handler.UpdateProfileHandler).Methods("GET")
 
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
