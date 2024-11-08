@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pages/login_page.dart';
+import 'package:frontend/pages/profile_page.dart';
+import 'package:frontend/pages/profile_edit_page.dart';
+import 'package:frontend/pages/create_course_page.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/services/gyroscope_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
@@ -10,95 +14,202 @@ class RunningSessionPage extends StatefulWidget {
 }
 
 class _RunningSessionPageState extends State<RunningSessionPage> {
-  GyroscopeService gyroscopeService = GyroscopeService();
-  ApiService apiService = ApiService();
-  late Timer _timer;
+  final ApiService apiService = ApiService();
+  List<Map<String, dynamic>> courseList = [];
+  Map<String, dynamic>? selectedCourse;
+  Timer? _timer;
   int _secondsElapsed = 0;
   double _totalDistance = 0.0;
-  double _currentSpeed = 0.0;
+  int _cadence = 0;
+  String _currentPace = "0:00";
 
   @override
   void initState() {
     super.initState();
-    startSession();
-    gyroscopeService.startListening(updateGyroscopeData);
+    _loadCourses();
   }
 
-  // 자이로스코프 데이터를 처리하는 함수
-  void updateGyroscopeData(Map<String, double> gyroscopeData) {
+  Future<void> _loadCourses() async {
+    final courses = await apiService.fetchCourses();
     setState(() {
-      // 예시: x축을 속도에 반영
-      _currentSpeed = gyroscopeData['x'] ?? 0.0;
+      courseList = courses;
     });
   }
 
-  void startSession() {
-    gyroscopeService.startTracking();
+  void _startRunningCourse() {
+    if (selectedCourse != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RunningPageWithPacer(course: selectedCourse!),
+        ),
+      );
+    } else {
+      print("Please select a course first.");
+    }
+  }
+
+  void _navigateToCreateCourse() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CreateCoursePage()),
+    );
+  }
+
+  Future<void> _logout() async {
+    await apiService.logout();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
+  }
+
+  void _navigateToProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProfilePage()),
+    );
+  }
+
+  void _navigateToProfileEdit() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProfileEditPage()),
+    );
+  }
+
+  void _startSession() {
     _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
       setState(() {
         _secondsElapsed++;
-        // 자이로스코프 데이터를 활용하여 거리를 계산
-        _totalDistance += _currentSpeed; // 이동 거리 업데이트
+        _calculatePace();
+        _calculateCadence();
       });
     });
   }
 
-  void endSession() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    String? userId = prefs.getString('user_id');
-
-    if (token != null && userId != null) {
-      int totalTime = _secondsElapsed;
-      double caloriesBurned = _totalDistance * 0.05;
-      String averagePace =
-          totalTime > 0 ? "${_totalDistance / totalTime} km/h" : "0";
-
-      await apiService.saveRunningSession(
-        token: token,
-        userId: userId,
-        startTime: DateTime.now()
-            .subtract(Duration(seconds: _secondsElapsed))
-            .toIso8601String(),
-        endTime: DateTime.now().toIso8601String(),
-        totalDistance: _totalDistance,
-        totalTime: totalTime,
-        averagePace: averagePace,
-        caloriesBurned: caloriesBurned,
-      );
-
-      Navigator.pop(context); // 세션 완료 후 페이지 종료
+  void _calculatePace() {
+    if (_totalDistance > 0) {
+      double pace = _secondsElapsed / _totalDistance;
+      int minutes = pace ~/ 60;
+      int seconds = (pace % 60).toInt();
+      _currentPace = "$minutes:${seconds.toString().padLeft(2, '0')}";
     }
+  }
+
+  void _calculateCadence() {
+    _cadence = (_totalDistance / _secondsElapsed * 100).toInt();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Running Session'),
+        title: Text("Running Session"),
         actions: [
           IconButton(
-            icon: Icon(Icons.stop),
-            onPressed: endSession,
+            icon: Icon(Icons.logout),
+            onPressed: _logout,
           ),
         ],
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Time Elapsed: $_secondsElapsed seconds'),
-            Text('Total Distance: ${_totalDistance.toStringAsFixed(2)} km'),
-            Text('Current Speed: ${_currentSpeed.toStringAsFixed(2)} km/h'),
-          ],
-        ),
+      body: Column(
+        children: [
+          ElevatedButton(
+            onPressed: _navigateToCreateCourse,
+            child: Text("코스 생성"),
+          ),
+          DropdownButton<Map<String, dynamic>>(
+            value: selectedCourse,
+            hint: Text("코스 선택"),
+            onChanged: (course) {
+              setState(() {
+                selectedCourse = course;
+              });
+            },
+            items: courseList.map((course) {
+              return DropdownMenuItem<Map<String, dynamic>>(
+                value: course,
+                child: Text(course['course_name']),
+              );
+            }).toList(),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _startRunningCourse();
+              _startSession();
+            },
+            child: Text("선택한 코스로 시작하기"),
+          ),
+          ElevatedButton(
+            onPressed: _navigateToProfile,
+            child: Text("프로필 페이지로 이동"),
+          ),
+          ElevatedButton(
+            onPressed: _navigateToProfileEdit,
+            child: Text("프로필 수정 페이지로 이동"),
+          ),
+          Text("실시간 페이스: $_currentPace"),
+          Text("실시간 케이던스: $_cadence"),
+          Text("달린 시간: $_secondsElapsed 초"),
+        ],
       ),
     );
   }
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     super.dispose();
+  }
+}
+
+class RunningPageWithPacer extends StatelessWidget {
+  final Map<String, dynamic> course;
+
+  RunningPageWithPacer({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Running with Pacer"),
+      ),
+      body: GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: LatLng(course['start_point']['latitude'],
+              course['start_point']['longitude']),
+          zoom: 14.0,
+        ),
+        markers: {
+          Marker(
+            markerId: MarkerId("start"),
+            position: LatLng(course['start_point']['latitude'],
+                course['start_point']['longitude']),
+          ),
+          Marker(
+            markerId: MarkerId("end"),
+            position: LatLng(course['end_point']['latitude'],
+                course['end_point']['longitude']),
+          ),
+          Marker(
+            markerId: MarkerId("current"),
+            position: LatLng(course['start_point']['latitude'],
+                course['start_point']['longitude']),
+          ),
+        },
+        polylines: {
+          Polyline(
+            polylineId: PolylineId("route"),
+            points: course['route'].map<LatLng>((point) {
+              return LatLng(point['latitude'], point['longitude']);
+            }).toList(),
+            color: Colors.blue,
+          ),
+        },
+      ),
+    );
   }
 }

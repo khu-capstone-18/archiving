@@ -7,8 +7,8 @@ class ApiService {
   final String baseUrl = 'http://localhost:8080';
 
   // 회원가입 API
-  Future<http.Response> signup(
-      String username, String password, String email, String nickname) async {
+  Future<http.Response> signup(String username, String password, String email,
+      String nickname, String weight) async {
     final url = Uri.parse('$baseUrl/auth/signup');
     final response = await http.post(
       url,
@@ -18,6 +18,7 @@ class ApiService {
         'password': password,
         'email': email,
         'nickname': nickname,
+        'weight': weight,
       }),
     );
     return response;
@@ -37,6 +38,47 @@ class ApiService {
     return response;
   }
 
+  // 비밀번호 재설정 요청 메서드
+  Future<http.Response> requestPasswordReset(String phoneNumber) async {
+    final url = Uri.parse('$baseUrl/auth/reset-password/request');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"phone_number": phoneNumber}),
+    );
+    return response;
+  }
+
+  // 인증 코드 확인 메서드
+  Future<http.Response> verifyCode(
+      String phoneNumber, String verificationCode) async {
+    final url = Uri.parse('$baseUrl/auth/reset-password/verify');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "phone_number": phoneNumber,
+        "verification_code": verificationCode,
+      }),
+    );
+    return response;
+  }
+
+  // 비밀번호 재설정 메서드
+  Future<http.Response> resetPassword(
+      String phoneNumber, String newPassword) async {
+    final url = Uri.parse('$baseUrl/auth/reset-password/reset');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "phone_number": phoneNumber,
+        "new_password": newPassword,
+      }),
+    );
+    return response;
+  }
+
   // 유저 프로필 조회 API
   Future<http.Response> fetchUserProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -47,7 +89,7 @@ class ApiService {
       throw Exception('User ID or token not found in local storage');
     }
 
-    final url = Uri.parse('$baseUrl/user/profile/$userId');
+    final url = Uri.parse('$baseUrl/users/$userId/profile');
     final response = await http.get(
       url,
       headers: {
@@ -68,7 +110,7 @@ class ApiService {
       throw Exception('User ID or token not found in local storage');
     }
 
-    final url = Uri.parse('$baseUrl/user/profile/$userId');
+    final url = Uri.parse('$baseUrl/users/$userId/profile');
     final response = await http.put(
       url,
       headers: {
@@ -92,10 +134,13 @@ class ApiService {
     String? token = prefs.getString('token');
 
     if (token == null) {
+      print('Token not found in local storage.');
       throw Exception('Token not found in local storage');
     }
-
     final url = Uri.parse('$baseUrl/auth/logout');
+    print('Attempting to logout with token: $token'); // 디버그: 토큰 확인
+    print('Sending logout request to URL: $url'); // 디버그: URL 확인
+
     final response = await http.post(
       url,
       headers: {
@@ -104,9 +149,17 @@ class ApiService {
       },
     );
 
-    // 로그아웃 시 로컬에 저장된 정보 삭제
-    await prefs.remove('token');
-    await prefs.remove('user_id');
+    // 디버깅용 응답 출력
+    print('Logout response status: ${response.statusCode}');
+    print('Logout response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      // 성공 시 로컬에 저장된 정보 삭제
+      await prefs.remove('token');
+      await prefs.remove('user_id');
+    } else {
+      print('Logout failed with status code: ${response.statusCode}');
+    }
 
     return response;
   }
@@ -141,15 +194,15 @@ class ApiService {
     return response;
   }
 
-  // 실시간 러닝 데이터 전송 API (Gyroscope 포함)
+  // 실시간 러닝 데이터 전송 API
   Future<void> sendRealTimeRunningData({
     required String token,
     required String userId,
-    required Map<String, double> gyroscopeData,
     required double currentSpeed,
     required String currentPace,
     required int cadence,
     required String elapsedTime,
+    required Map<String, double> currentLocation,
   }) async {
     final url = Uri.parse('$baseUrl/running/real-time/$userId');
     final response = await http.post(
@@ -159,7 +212,7 @@ class ApiService {
         "Authorization": "Bearer $token",
       },
       body: jsonEncode({
-        'gyroscope_data': gyroscopeData,
+        'current_location': currentLocation,
         'current_speed': currentSpeed,
         'current_pace': currentPace,
         'cadence': cadence,
@@ -174,8 +227,9 @@ class ApiService {
     }
   }
 
-  // 러닝 코스 생성 API 호출 추가
+  // 러닝 코스 생성 API
   Future<http.Response> createRunningCourse({
+    required String courseId,
     required String token,
     required String userId,
     required String courseName,
@@ -186,12 +240,12 @@ class ApiService {
     required double length,
     required double estimatedTime,
   }) async {
-    final url = Uri.parse('$baseUrl/course');
+    final url = Uri.parse('$baseUrl/running/course/$userId');
     final response = await http.post(
       url,
       headers: {
-        "Content-Type": "application/json",
         "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
       },
       body: jsonEncode({
         'user_id': userId,
@@ -205,5 +259,83 @@ class ApiService {
       }),
     );
     return response;
+  }
+
+  // 코스 생성 시작 API
+  Future<Map<String, dynamic>> startCourse(String userId,
+      Map<String, double> startLocation, String currentTime) async {
+    final url = Uri.parse('$baseUrl/course/start');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        'user_id': userId,
+        'location': [startLocation],
+        'current_time': currentTime, // currentTime을 요청에 포함
+      }),
+    );
+    return jsonDecode(response.body);
+  }
+
+  // 코스 위치 업데이트 API
+  Future<http.Response> updateCourseLocation(String courseId, String userId,
+      List<Map<String, double>> locationList) async {
+    final url = Uri.parse('$baseUrl/course/$courseId/location');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        'course_id': courseId,
+        'user_id': userId,
+        'location': locationList,
+        'current_time': DateTime.now().toIso8601String(),
+      }),
+    );
+    return response;
+  }
+
+  // 코스 종료 API
+  Future<Map<String, dynamic>> endCourse(String courseId, String userId,
+      List<Map<String, double>> locationList) async {
+    final url = Uri.parse('$baseUrl/course/$courseId/end');
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        'course_id': courseId,
+        'user_id': userId,
+        'location': locationList,
+        'current_time': DateTime.now().toIso8601String(),
+      }),
+    );
+    return jsonDecode(response.body);
+  }
+
+  // 모든 코스 불러오기
+  Future<List<Map<String, dynamic>>> fetchCourses() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    String? userId = prefs.getString('user_id');
+
+    if (token == null || userId == null) {
+      throw Exception("Token or user ID not found");
+    }
+
+    final url = Uri.parse('$baseUrl/running/courses/$userId');
+    final response = await http.get(
+      url,
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> courses = jsonDecode(response.body);
+      return courses.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception(
+          "Failed to load courses with status code: ${response.statusCode}");
+    }
   }
 }
