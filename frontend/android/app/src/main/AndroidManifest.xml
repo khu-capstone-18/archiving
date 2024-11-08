@@ -10,19 +10,18 @@
 
     <application
         android:label="frontend"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"> <!-- 네트워크 통신에 대한 설정 -->
 
         <!-- Google Maps API Key 설정 -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_GOOGLE_MAPS_API_KEY" /> <!-- 여기서 실제 API 키를 입력하세요 -->
+            android:value="AIzaSyBfodyYHJelWM59wGNqJWPI3w3WmcKoEKk" /> 
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:taskAffinity=""
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
