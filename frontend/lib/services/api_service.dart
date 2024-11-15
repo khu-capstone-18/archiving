@@ -38,42 +38,38 @@ class ApiService {
     return response;
   }
 
-  // 비밀번호 재설정 요청 메서드
+  // 비밀번호 재설정 요청
   Future<http.Response> requestPasswordReset(String phoneNumber) async {
-    final url = Uri.parse('$baseUrl/auth/reset-password/request');
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"phone_number": phoneNumber}),
+      Uri.parse('$baseUrl/auth/reset-password/request'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone_number': phoneNumber}),
     );
     return response;
   }
 
-  // 인증 코드 확인 메서드
-  Future<http.Response> verifyCode(
-      String phoneNumber, String verificationCode) async {
-    final url = Uri.parse('$baseUrl/auth/reset-password/verify');
+  // 인증 코드 확인
+  Future<http.Response> verifyResetCode(String phoneNumber, String code) async {
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('$baseUrl/auth/reset-password/verify'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "phone_number": phoneNumber,
-        "verification_code": verificationCode,
+        'phone_number': phoneNumber,
+        'verification_code': code,
       }),
     );
     return response;
   }
 
-  // 비밀번호 재설정 메서드
+  // 비밀번호 재설정
   Future<http.Response> resetPassword(
       String phoneNumber, String newPassword) async {
-    final url = Uri.parse('$baseUrl/auth/reset-password/reset');
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('$baseUrl/auth/reset-password/reset'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "phone_number": phoneNumber,
-        "new_password": newPassword,
+        'phone_number': phoneNumber,
+        'new_password': newPassword,
       }),
     );
     return response;
@@ -171,6 +167,7 @@ class ApiService {
     required String startTime,
     required String endTime,
     required double totalDistance,
+    required List<Map<String, double>> route,
     required int totalTime,
     required String averagePace,
     required double caloriesBurned,
@@ -185,6 +182,7 @@ class ApiService {
       body: jsonEncode({
         'start_time': startTime,
         'end_time': endTime,
+        'route': route,
         'total_distance': totalDistance,
         'total_time': totalTime,
         'average_pace': averagePace,
@@ -262,8 +260,8 @@ class ApiService {
   }
 
   // 코스 생성 시작 API
-  Future<Map<String, dynamic>> startCourse(String userId,
-      Map<String, double> startLocation, String currentTime) async {
+  Future<Map<String, dynamic>> startCourse(
+      String userId, Map<String, double> startLocation) async {
     final url = Uri.parse('$baseUrl/course/start');
     final response = await http.post(
       url,
@@ -271,10 +269,16 @@ class ApiService {
       body: jsonEncode({
         'user_id': userId,
         'location': [startLocation],
-        'current_time': currentTime, // currentTime을 요청에 포함
+        'current_time': DateTime.now().toIso8601String()
       }),
     );
-    return jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          "Failed to start course with status code: ${response.statusCode}");
+    }
   }
 
   // 코스 위치 업데이트 API
@@ -300,18 +304,54 @@ class ApiService {
     final url = Uri.parse('$baseUrl/course/$courseId/end');
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Authorization": "Bearer ${await _getToken()}",
+        "Content-Type": "application/json",
+      },
       body: jsonEncode({
         'course_id': courseId,
         'user_id': userId,
         'location': locationList,
-        'current_time': DateTime.now().toIso8601String(),
+        'current_time': DateTime.now().toIso8601String()
       }),
     );
-    return jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      // 빈 응답 처리
+      if (response.body.isEmpty) {
+        print("Received empty response from server.");
+        return {};
+      }
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+          "Failed to end course with status code: ${response.statusCode}");
+    }
   }
 
-  // 모든 코스 불러오기
+  Future<String> _getToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token') ?? '';
+  }
+
+// 서버에서 받은 total_time을 Duration으로 변환하는 헬퍼 함수
+  Duration _parseDuration(String duration) {
+    final parts = duration.split(':');
+    if (parts.length == 3) {
+      final hours = int.tryParse(parts[0]) ?? 0;
+      final minutes = int.tryParse(parts[1]) ?? 0;
+      final seconds = int.tryParse(parts[2]) ?? 0;
+      return Duration(hours: hours, minutes: minutes, seconds: seconds);
+    } else if (parts.length == 2) {
+      final minutes = int.tryParse(parts[0]) ?? 0;
+      final seconds = int.tryParse(parts[1]) ?? 0;
+      return Duration(minutes: minutes, seconds: seconds);
+    } else {
+      throw FormatException("Invalid duration format");
+    }
+  }
+
+  // 러닝 코스 조회
   Future<List<Map<String, dynamic>>> fetchCourses() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
@@ -321,7 +361,7 @@ class ApiService {
       throw Exception("Token or user ID not found");
     }
 
-    final url = Uri.parse('$baseUrl/running/courses/$userId');
+    final url = Uri.parse('$baseUrl/users/$userId/courses');
     final response = await http.get(
       url,
       headers: {
@@ -331,7 +371,12 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> courses = jsonDecode(response.body);
+      final List<dynamic>? courses = jsonDecode(response.body);
+
+      // 서버 응답이 null인 경우 빈 리스트 반환
+      if (courses == null) {
+        return [];
+      }
       return courses.cast<Map<String, dynamic>>();
     } else {
       throw Exception(

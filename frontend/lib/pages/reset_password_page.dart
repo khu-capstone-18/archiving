@@ -30,15 +30,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
   // 인증 코드 확인
   Future<void> verifyCode() async {
-    final response =
-        await apiService.verifyCode(phoneController.text, codeController.text);
+    final response = await apiService.verifyResetCode(
+        phoneController.text, codeController.text);
     if (response.statusCode == 200) {
       setState(() {
-        message = 'Code verified, you can reset your password';
+        message = 'Verification successful. You can now reset your password';
       });
     } else {
       setState(() {
-        message = 'Verification failed';
+        message = 'Verification failed. Please check your code and try again.';
       });
     }
   }
@@ -49,12 +49,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         phoneController.text, newPasswordController.text);
     if (response.statusCode == 200) {
       setState(() {
-        message = 'Password reset successfully';
+        message = 'Password reset successful';
       });
-      Navigator.pop(context);
     } else {
       setState(() {
-        message = 'Password reset failed';
+        message = 'Failed to reset password. Please try again.';
       });
     }
   }
@@ -92,7 +91,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               onPressed: resetPassword,
               child: Text('Reset Password'),
             ),
-            if (message.isNotEmpty) Text(message),
+            SizedBox(height: 20),
+            Text(message, style: TextStyle(color: Colors.red)),
           ],
         ),
       ),

@@ -50,28 +50,18 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 */
-  // 프로필 정보 가져오기 (임시 코드 - 서버 오류 시 기본값 설정)
+  // 프로필 정보 가져오기
   Future<Map<String, dynamic>> fetchUserProfile() async {
     try {
       final response = await apiService.fetchUserProfile();
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-
-        // 서버가 total_distance, total_time, best_record를 반환하지 못할 때 기본값을 설정 (임시 코드)
-        responseData['total_distance'] ??= 0; // total_distance 기본값
-        responseData['total_time'] ??= 0; // total_time 기본값
-        responseData['best_record'] ??= {
-          'distance': 0,
-          'time': 0
-        }; // best_record 기본값
-
-        return responseData;
+        return responseData; // 서버 응답을 그대로 사용
       } else {
         throw Exception('Failed to load profile');
       }
     } catch (e) {
-      // 임시 코드: 서버 오류 시 무한 재시도 방지 및 기본값 반환
-      print('Error fetching profile (임시 코드): $e');
+      print('Error fetching profile: $e');
       return {
         'username': 'Unknown',
         'profile_image': '',
