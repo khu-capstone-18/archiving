@@ -10,6 +10,17 @@ CREATE TABLE users (
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE courses (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL, 
+  description TEXT DEFAULT '',
+  length FLOAT NOT NULL,
+  estimated_time VARCHAR(100) NOT NULL,
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE sessions (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL,
@@ -36,34 +47,21 @@ CREATE TABLE competitions (
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE courses (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL,
-  name VARCHAR(100) NOT NULL, 
-  description TEXT DEFAULT "",
-  length FLOAT64 NOT NULL,
-  estimated_time VARCHAR(100) NOT NULL,
-  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+CREATE TABLE coursestest (
+  id VARCHAR(100) PRIMARY KEY,
+  name VARCHAR(100) DEFAULT '',
+  creator_id INT NOT NULL,
+  latitude VARCHAR(100) NOT NULL, 
+  longitude VARCHAR(100) NOT NULL, 
+  "current_time" VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE points {
+CREATE TABLE points (
   id SERIAL PRIMARY KEY,
   course_id INT NOT NULL,
   latitude VARCHAR(100) NOT NULL,
   longitude VARCHAR(100) NOT NULL,
-  start_point INT(1) DEFAULT FALSE,
-  end_point INT(1) DEFAULT FALSE,
-  order INT DEFAULT 0
-}
-
-
-CREATE TABLE coursestest (
-  id VARCHAR(100) PRIMARY KEY,
-  name VARCHAR(100) DEFAULT "",
-  creator_id INT NOT NULL,
-  latitude VARCHAR(100) NOT NULL, 
-  longitude VARCHAR(100) NOT NULL, 
-  current_time VARCHAR(100) NOT NULL
-  -- FOREIGN KEY (creator_id) REFERENCES users(id)
+  start_point BOOLEAN DEFAULT 'false',
+  end_point BOOLEAN DEFAULT 'false',
+  "order" INT DEFAULT 0
 );
