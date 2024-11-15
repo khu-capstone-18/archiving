@@ -91,7 +91,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pw, id, err := repository.GetPasswordAndID(req.Username)
+	pw, err := repository.GetPassword(req.Username)
 	if err != nil {
 		fmt.Println("GET PASSWORD ERR:", err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -116,11 +116,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	response := struct {
 		Message string `json:"message"`
 		Token   string `json:"token"`
-		UserID  string `json:"user_id"`
 	}{
 		Message: "Login successful",
 		Token:   token,
-		UserID:  id,
 	}
 
 	resp, err := json.Marshal(response)

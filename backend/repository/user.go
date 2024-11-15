@@ -33,13 +33,13 @@ func GetUserID(username string) (int, error) {
 	return uid, nil
 }
 
-func GetPasswordAndID(username string) (password, id string, err error) {
-	pw, id := "", ""
-	r := db.QueryRow(`SELECT password, id FROM users WHERE username='` + username + `'`)
-	if err := r.Scan(&pw, &id); err != nil {
-		return pw, id, err
+func GetPassword(username string) (string, error) {
+	pw := ""
+	r := db.QueryRow(`SELECT password FROM users WHERE username='` + username + `'`)
+	if err := r.Scan(&pw); err != nil {
+		return pw, err
 	}
-	return pw, id, nil
+	return pw, nil
 }
 
 func GetUser(userId string) (*User, error) {
