@@ -9,12 +9,12 @@ require github.com/gorilla/mux v1.8.1
 require (
 	github.com/PuerkitoBio/goquery v1.10.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	golang.org/x/text v0.19.0
 )
 
 require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 )

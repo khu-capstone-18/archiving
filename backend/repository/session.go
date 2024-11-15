@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"strconv"
 	"time"
 )
@@ -30,19 +31,25 @@ type Realtime struct {
 	Exit           bool          `json:"exit"`
 }
 
-func GetBestRecordByUserId(userId string) (*Session, error) {
+func GetBestRecordByUserId(username string) (*Session, error) {
 	record := Session{}
-	r := db.QueryRow(`SELECT distance, time FROM sessions WHERE user_id=1 ORDER BY distance DESC LIMIT 1`)
+	r := db.QueryRow(`SELECT distance, time FROM sessions WHERE username='` + username + `' ORDER BY distance DESC LIMIT 1`)
+	if err := r.Scan(&record.Distance, &record.Time); err != sql.ErrNoRows {
+		return &record, nil
+	}
 	if err := r.Scan(&record.Distance, &record.Time); err != nil {
 		return &record, err
 	}
 	return &record, nil
 }
 
-func GetTotalSessions(userId string) (*[]Session, error) {
+func GetTotalSessions(username string) (*[]Session, error) {
 	records := []Session{}
 	record := Session{}
-	r, err := db.Query(`SELECT distance, time FROM sessions WHERE user_id=` + userId)
+	r, err := db.Query(`SELECT distance, time FROM sessions WHERE username='` + username + `'`)
+	if err != sql.ErrNoRows {
+		return &records, nil
+	}
 	if err != nil {
 		return nil, err
 	}

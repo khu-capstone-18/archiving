@@ -29,8 +29,13 @@ func main() {
 	r.HandleFunc("/{any:.+}", handler.OptionHandler).Methods("OPTIONS")
 	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
 	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
-	r.HandleFunc("/users/{userId}/profile", handler.ProfileHandler).Methods("GET")
-	r.HandleFunc("/users/{userId}/profile", handler.UpdateProfileHandler).Methods("PUT")
+
+	r.HandleFunc("/user/profile/", handler.ProfileHandler).Methods("GET")
+	// r.HandleFunc("/users/{username}/profile", handler.ProfileHandler).Methods("GET")
+
+	r.HandleFunc("/user/profile/", handler.UpdateProfileHandler).Methods("PUT")
+	// r.HandleFunc("/profile", handler.UpdateProfileHandler).Methods("PUT")
+
 	r.HandleFunc("/users/{userId}/sessions", handler.GetSessionHandler).Methods("GET")
 	r.HandleFunc("/users/{userId}/real-time", handler.StartRealtimeHandler).Methods("POST")
 	r.HandleFunc("/course", handler.PostCourseHandler).Methods("POST")
