@@ -15,14 +15,14 @@ type Credentials struct {
 }
 
 type Claims struct {
-	Username string `json:"username"`
+	UserID string `json:"user_id"`
 	jwt.StandardClaims
 }
 
-func GenerateJwtToken(username string, duration time.Duration) (string, error) {
+func GenerateJwtToken(id string, duration time.Duration) (string, error) {
 	expirationTime := time.Now().Add(duration)
 	claims := &Claims{
-		Username: username,
+		UserID: id,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},
@@ -49,5 +49,5 @@ func ValidateJwtToken(token string) (string, error) {
 		return "", fmt.Errorf("%s", "NOT CORRECT JWT TOKEN ERR")
 	}
 
-	return claims.Username, nil
+	return claims.UserID, nil
 }

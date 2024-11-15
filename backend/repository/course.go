@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"fmt"
 	"khu-capstone-18-backend/model"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Course struct {
@@ -56,15 +57,20 @@ func GetCourses(userId string) ([]*Course, error) {
 }
 
 func CreateCourseStart(crs *model.CourseTest) error {
-	if err := createCourse(crs); err != nil {
-		fmt.Println(fmt.Println("Create Course Start Handler Err:", err))
+	id := uuid.NewString()
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id) VALUES ('` + crs.CourseID + `', '` + crs.CourseName + `', '` + crs.CreatorID + `')`); err != nil {
+		return err
 	}
+
+	if _, err := db.Exec(`INSERT INTO points (id, user_id, course_id, latitude, longitude, start_point, end_point, "order") VALUES ('` + id + `', '` + crs.CreatorID + `', '` + crs.CourseID + `', ` + strconv.FormatFloat(crs.Location.Latitude, 'f', -1, 64) + `, ` + strconv.FormatFloat(crs.Location.Longitude, 'f', -1, 64) + `, 'true', 'false', 1)`); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func CreateCourseEnd(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 	if err := createCourse(crs); err != nil {
-		fmt.Println(fmt.Println("Create Course Start Handler Err:", err))
 		return nil, err
 	}
 
@@ -72,14 +78,20 @@ func CreateCourseEnd(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 }
 
 func createCourse(crs *model.CourseTest) error {
-	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, latitude, longitude, current_time) VALUES (` + crs.CourseID + `, '` + crs.CourseName + `', '` + crs.UserID + `', '` + strconv.Itoa(int(crs.Location.Latitude)) + `', '` + strconv.Itoa(int(crs.Location.Longitude)) + `', '` + crs.CurrentTime.String() + `')`); err != nil {
+	id := uuid.NewString()
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, current_time) VALUES ('` + crs.CourseID + `', '` + crs.CourseName + `', '` + crs.CreatorID + `')`); err != nil {
 		return err
 	}
+
+	if _, err := db.Exec(`INSERT INTO points (id, user_id, course_id, latitude, longitude, start_point, end_point, "order") VALUES ('` + id + `', '` + crs.CreatorID + `', '` + crs.CourseID + `', ` + strconv.FormatFloat(crs.Location.Latitude, 'f', -1, 64) + `, ` + strconv.FormatFloat(crs.Location.Longitude, 'f', -1, 64) + `, 'true', 'false', 1)`); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func GetCoursesTest(crs *model.CourseTest) (*[]*model.CourseTest, error) {
-	r, err := db.Query(`SELECT id, name, creator_id, latitude, longitude, current_time FROM coursestest WHERE id = '` + crs.CourseID + `' ORDER BY current_time DESC`)
+	r, err := db.Query(`SELECT id, name, creator_id, latitude, longitude, "current_time" FROM coursestest WHERE id = '` + crs.CourseID + `'`)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +100,7 @@ func GetCoursesTest(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 	courses := []*model.CourseTest{}
 
 	for r.Next() {
-		r.Scan(&course.CourseID, &course.CourseName, &course.UserID, &course.Location.Latitude, &course.Location.Longitude, &course.CurrentTime)
+		r.Scan(&course.CourseID, &course.CourseName, &course.CreatorID, &course.Location.Latitude, &course.Location.Longitude, &course.CurrentTime)
 		courses = append(courses, &course)
 	}
 

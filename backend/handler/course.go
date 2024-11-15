@@ -135,11 +135,29 @@ func GetCoursesHandler(w http.ResponseWriter, r *http.Request) {
 // }
 
 func CreateCourseStartHandler(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
+		fmt.Println("NO JWT TOKEN EXIST ERROR")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Bearer 토큰 추출
+	t := authHeader[7:]
+
+	userId, err := auth.ValidateJwtToken(t)
+	if err != nil {
+		fmt.Println("JWT TOKEN VALIDATION ERR:", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	req := model.CourseTest{}
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
 
 	req.CourseID = uuid.NewString()
+	req.CreatorID = userId
 
 	if err := repository.CreateCourseStart(&req); err != nil {
 		fmt.Println("Create Course Start Handler Err:", err)
@@ -179,11 +197,12 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	var beforeLongitude float64
 
 	for i, c := range *courses {
+		t, _ := time.Parse("2006-01-02T15:03:04Z", c.CurrentTime)
 		if i == len(*courses)-1 {
-			startTime = c.CurrentTime
+			startTime = t
 		}
 		if i == 0 {
-			endTime = c.CurrentTime
+			endTime = t
 			beforeLatitude = c.Location.Latitude
 			beforeLongitude = c.Location.Longitude
 			continue

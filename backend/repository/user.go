@@ -3,6 +3,8 @@ package repository
 import (
 	"strconv"
 	"strings"
+
+	_ "github.com/lib/pq"
 )
 
 type User struct {
@@ -15,8 +17,8 @@ type User struct {
 	Weight       float64 `json:"weight"`
 }
 
-func CreateUser(username, password, email, weight string) error {
-	_, err := db.Exec(`INSERT INTO users (username, password, email, weight) VALUES ('` + username + `', '` + password + `', '` + email + `', ` + weight + `)`)
+func CreateUser(id, username, password, email, weight string) error {
+	_, err := db.Exec(`INSERT INTO users (id, username, password, email, weight) VALUES ('` + id + `', '` + username + `', '` + password + `', '` + email + `', ` + weight + `)`)
 	if err != nil {
 		return err
 	}
@@ -24,8 +26,8 @@ func CreateUser(username, password, email, weight string) error {
 	return nil
 }
 
-func GetUserID(username string) (int, error) {
-	uid := 0
+func GetUserID(username string) (string, error) {
+	uid := ""
 	r := db.QueryRow(`SELECT id FROM users WHERE username='` + username + `'`)
 	if err := r.Scan(&uid); err != nil {
 		return uid, err
@@ -60,7 +62,7 @@ func GetUser(username string) (*User, error) {
 	return &user, nil
 }
 
-func PutUser(username, profileImage, weeklyGoal, weight string) error {
+func PutUser(userId, profileImage, weeklyGoal, weight string) error {
 	query := []string{}
 	if profileImage != "" {
 		query = append(query, `profile_image = '`+profileImage+`'`)
@@ -73,7 +75,7 @@ func PutUser(username, profileImage, weeklyGoal, weight string) error {
 	}
 	c := strings.Join(query, ", ")
 
-	_, err := db.Exec(`UPDATE users SET ` + c + ` WHERE username='` + username + `'`)
+	_, err := db.Exec(`UPDATE users SET ` + c + ` WHERE id = '` + userId + `'`)
 	if err != nil {
 		return err
 	}

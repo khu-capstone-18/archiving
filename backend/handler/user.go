@@ -8,15 +8,16 @@ import (
 	"khu-capstone-18-backend/repository"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("SIGNUP HANDLER START")
 	req := struct {
+		ID       string `json:"id"`
 		Username string `json:"username"`
 		Password string `json:"password"`
 		Email    string `json:"email"`
@@ -32,22 +33,15 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// DB에 유저 삽입
-	if err := repository.CreateUser(req.Username, req.Password, req.Email, req.Weight); err != nil {
+	id := uuid.NewString()
+	if err := repository.CreateUser(id, req.Username, req.Password, req.Email, req.Weight); err != nil {
 		fmt.Println("CREATE USER ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	// DB에서 유저ID 조회
-	id, err := repository.GetUserID(req.Username)
-	if err != nil {
-		fmt.Println("GET UESR ID ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	// JWT 토큰 생성
-	token, err := auth.GenerateJwtToken(req.Username, 5*time.Minute)
+	token, err := auth.GenerateJwtToken(id, 5*time.Minute)
 	if err != nil {
 		fmt.Println("GENERATE JWT TOKEN ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -60,7 +54,6 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		Token   string `json:"token"`
 	}{
 		Message: "Signup successful",
-		UserId:  strconv.Itoa(id),
 		Token:   token,
 	}
 
@@ -92,23 +85,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pw := ""
-	if strings.Contains(req.Username, "@") {
-		var err error
-		pw, err = repository.GetPasswordByEmail(req.Username)
-		if err != nil {
-			fmt.Println("GET PASSWORD ERR:", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-	} else {
-		var err error
-		pw, err = repository.GetPasswordByUsername(req.Username)
-		if err != nil {
-			fmt.Println("GET PASSWORD ERR:", err)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
+	pw, err := repository.GetPasswordByUsername(req.Username)
+	if err != nil {
+		fmt.Println("GET PASSWORD ERR:", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 
 	if pw != req.Password {
@@ -125,6 +106,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	uid, err := repository.GetUserID(req.Username)
+	if err != nil {
+		fmt.Println("GETTING USER ID ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	// 응답
 	response := struct {
 		Message string `json:"message"`
@@ -133,6 +120,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		Message: "Login successful",
 		Token:   token,
+		UserID:  uid,
 	}
 
 	resp, err := json.Marshal(response)
@@ -141,10 +129,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
-	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
-	fmt.Println("TEST RESPONSE JWT TOKEN:", token)
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
@@ -195,7 +179,7 @@ func OptionHandler(w http.ResponseWriter, r *http.Request) {
 
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	username := vars["username"]
+	userId := vars["userId"]
 
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
@@ -214,10 +198,6 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(requestor)
-	fmt.Println(requestor)
-	fmt.Println(requestor)
-
 	u, err := repository.GetUser(requestor)
 	if err != nil {
 		fmt.Println("GET USER PROFILE ERR:", err)
@@ -225,14 +205,14 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	record, err := GetBestRecordByUserId(username)
+	record, err := GetBestRecordByUserId(userId)
 	if err != nil {
 		fmt.Println("GET USER'S BEST RECORD ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	totalDistance, totalTime, err := GetTotalDistanceAndTime(username)
+	totalDistance, totalTime, err := GetTotalDistanceAndTime(userId)
 	if err != nil {
 		fmt.Println("GET USER'S TOTAL RECORD DATA ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -293,7 +273,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Bearer 토큰 추출
 	t := authHeader[7:]
 
-	username, err := auth.ValidateJwtToken(t)
+	userId, err := auth.ValidateJwtToken(t)
 	if err != nil {
 		fmt.Println("JWT TOKEN VALIDATION ERR:", err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -308,7 +288,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := repository.PutUser(username, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
+	if err := repository.PutUser(userId, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
 		fmt.Println("PUT USER PROFILE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -334,12 +314,12 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func GetBestRecordByUserId(username string) (*repository.Session, error) {
-	return repository.GetBestRecordByUserId(username)
+func GetBestRecordByUserId(userId string) (*repository.Session, error) {
+	return repository.GetBestRecordByUserId(userId)
 }
 
-func GetTotalDistanceAndTime(username string) (totalDistance float64, totalTime time.Duration, err error) {
-	records, err := repository.GetTotalSessions(username)
+func GetTotalDistanceAndTime(userId string) (totalDistance float64, totalTime time.Duration, err error) {
+	records, err := repository.GetTotalSessions(userId)
 	if err != nil {
 		return 0, 0, err
 	}

@@ -3,29 +3,30 @@ CREATE database testdb;
 \c testdb;
 
 CREATE TABLE users (
-	email VARCHAR(100) PRIMARY KEY,
+  id VARCHAR(100) PRIMARY KEY,
   username VARCHAR(100) NOT NULL UNIQUE,
+	email VARCHAR(100) NOT NULL UNIQUE,
 	password VARCHAR(100) NOT NULL,
   profile_image TEXT DEFAULT '',
-  weight INT NOT NULL,
+  weight FLOAT NOT NULL,
   weekly_goal VARCHAR(100) DEFAULT 0,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE courses (
   id SERIAL PRIMARY KEY,
-  user_email VARCHAR(100) NOT NULL,
+  user_id VARCHAR(100) NOT NULL,
   name VARCHAR(100) NOT NULL, 
   description TEXT DEFAULT '',
   length FLOAT NOT NULL,
   estimated_time VARCHAR(100) NOT NULL,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_email) REFERENCES users(email)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE sessions (
   id SERIAL PRIMARY KEY,
-  user_email VARCHAR(100) NOT NULL,
+  user_id VARCHAR(100) NOT NULL,
   course_id INT NOT NULL,
   distance FLOAT NOT NULL,
   time VARCHAR(100) NOT NULL,
@@ -34,7 +35,7 @@ CREATE TABLE sessions (
   average_pace VARCHAR(100) NOT NULL,
   calories_burned VARCHAR(100) NOT NULL,
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_email) REFERENCES users(email),
+  FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (course_id) REFERENCES courses(id)
 );
 
@@ -52,22 +53,20 @@ CREATE TABLE competitions (
 CREATE TABLE coursestest (
   id VARCHAR(100) PRIMARY KEY,
   name VARCHAR(100) DEFAULT '',
-  creator_id INT NOT NULL,
-  latitude VARCHAR(100) NOT NULL, 
-  longitude VARCHAR(100) NOT NULL, 
-  "current_time" VARCHAR(100) NOT NULL
+  creator_id VARCHAR(100) NOT NULL, 
+  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE points (
-  id SERIAL PRIMARY KEY,
-  course_id INT NOT NULL,
+  id VARCHAR(100) PRIMARY KEY,
+  user_id VARCHAR(100) NOT NULL,
+  course_id VARCHAR(100) NOT NULL,
   latitude VARCHAR(100) NOT NULL,
   longitude VARCHAR(100) NOT NULL,
   start_point BOOLEAN DEFAULT 'false',
   end_point BOOLEAN DEFAULT 'false',
-  "order" INT DEFAULT 0
+  "order" INT DEFAULT 0,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
-
-insert into users (email, username, password, weight) values ('test@naver.com', 'tester', 'tester1234', 70.2);
 
 -- export PATH=$HOME/flutter/bin:$PATH 

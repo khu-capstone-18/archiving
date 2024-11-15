@@ -17,11 +17,11 @@ type Course struct {
 }
 
 type CourseTest struct {
-	CourseName  string    `json:"course_name"`
-	CourseID    string    `json:"course_id"`
-	UserID      string    `json:"user_id"`
-	Location    Location  `json:"location"`
-	CurrentTime time.Time `json:"current_time"`
+	CreatorID   string   `json:"creator_id"`
+	CourseName  string   `json:"course_name"`
+	CourseID    string   `json:"course_id"`
+	Location    Location `json:"location"`
+	CurrentTime string   `json:"current_time"`
 }
 
 type Location struct {
