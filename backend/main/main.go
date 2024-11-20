@@ -36,12 +36,15 @@ func main() {
 
 	r.HandleFunc("/users/{userId}/sessions", handler.GetSessionHandler).Methods("GET")
 	r.HandleFunc("/users/{userId}/real-time", handler.StartRealtimeHandler).Methods("POST")
+	r.HandleFunc("/courses", handler.GetCoursesHandler).Methods("GET")
 	r.HandleFunc("/course", handler.PostCourseHandler).Methods("POST")
-	r.HandleFunc("/users/{userId}/courses", handler.GetCoursesHandler).Methods("GET")
 
 	r.HandleFunc("/course/start", handler.CreateCourseStartHandler).Methods("POST")
+	r.HandleFunc("/courses/{courseId}/child/start", handler.CreateChildCourseStartHandler).Methods("POST")
+	r.HandleFunc("/courses/{courseId}/location", handler.CreateCourseLocaionHandler).Methods("POST")
+	r.HandleFunc("/courses/{courseId}/childs/{childId}/location", handler.CreateCourseLocaionHandler).Methods("POST")
+
 	r.HandleFunc("/course/{courseId}/end", handler.CreateCourseEndHandler).Methods("POST")
-	r.HandleFunc("/course/{courseId}/location", handler.CreateCourseEndHandler).Methods("POST")
 
 	// r.HandleFunc("/test/{userId}", handler.UpdateProfileHandler).Methods("GET")
 

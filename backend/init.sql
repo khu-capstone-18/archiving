@@ -53,20 +53,19 @@ CREATE TABLE competitions (
 CREATE TABLE coursestest (
   id VARCHAR(100) PRIMARY KEY,
   name VARCHAR(100) DEFAULT '',
-  creator_id VARCHAR(100) NOT NULL, 
-  create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  creator_id VARCHAR(100) NOT NULL,
+  public BOOLEAN NOT NULL,
+  copy_course_id VARCHAR(100) DEFAULT '',
 );
 
 CREATE TABLE points (
   id VARCHAR(100) PRIMARY KEY,
-  user_id VARCHAR(100) NOT NULL,
   course_id VARCHAR(100) NOT NULL,
   latitude VARCHAR(100) NOT NULL,
   longitude VARCHAR(100) NOT NULL,
-  start_point BOOLEAN DEFAULT 'false',
-  end_point BOOLEAN DEFAULT 'false',
   "order" INT DEFAULT 0,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  "current_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- export PATH=$HOME/flutter/bin:$PATH 

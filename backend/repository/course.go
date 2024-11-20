@@ -52,17 +52,28 @@ func PostPoints(crs *Course, courseId int) error {
 	return nil
 }
 
-func GetCourses(userId string) ([]*Course, error) {
-	return nil, nil
+func GetCourses() ([]*model.CourseTest, error) {
+	r, err := db.Query(`SELECT id, name, creator_id WHERE public = true and copy_course_id = ''`)
+	if err != nil {
+		return nil, err
+	}
+
+	courses := []*model.CourseTest{}
+	for r.Next() {
+		crs := model.CourseTest{}
+		r.Scan(&crs.CourseID, &crs.CourseName, &crs.CreatorID)
+		courses = append(courses, &crs)
+	}
+
+	return courses, nil
 }
 
 func CreateCourseStart(crs *model.CourseTest) error {
-	id := uuid.NewString()
-	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id) VALUES ('` + crs.CourseID + `', '` + crs.CourseName + `', '` + crs.CreatorID + `')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CourseName + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `')`); err != nil {
 		return err
 	}
 
-	if _, err := db.Exec(`INSERT INTO points (id, user_id, course_id, latitude, longitude, start_point, end_point, "order") VALUES ('` + id + `', '` + crs.CreatorID + `', '` + crs.CourseID + `', ` + strconv.FormatFloat(crs.Location.Latitude, 'f', -1, 64) + `, ` + strconv.FormatFloat(crs.Location.Longitude, 'f', -1, 64) + `, 'true', 'false', 1)`); err != nil {
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + crs.CourseID + `', '` + crs.CourseID + `', 'true', 'false', 1)`); err != nil {
 		return err
 	}
 
@@ -75,6 +86,46 @@ func CreateCourseEnd(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 	}
 
 	return GetCoursesTest(crs)
+}
+
+func CreatePoint(pnt *model.Point) error {
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude) VALUES ('` + pnt.ID + `', '` + pnt.CourseID + `', '` + strconv.FormatFloat(pnt.Latitude, 'f', -1, 64) + `', '` + strconv.FormatFloat(pnt.Longitude, 'f', -1, 64) + `')`); err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetLatestPointOrder(courseId string) int {
+	r := db.QueryRow(`SELECT "order" FROM points WHERE course_id = '` + courseId + `' ORDER BY "order" desc LIMIT 1`)
+	order := -1
+	r.Scan(&order)
+
+	return order
+}
+
+func GetPoints(courseId string, length int) ([]*model.Point, error) {
+	r, err := db.Query(`SELECT id, latitude, longitude, "order", "current_time" FROM points WHERE course_id = '` + courseId + `'`)
+	if err != nil {
+		return nil, err
+	}
+
+	pnts := []*model.Point{}
+	count := 0
+
+	for r.Next() {
+		if count != 0 && count == length {
+			break
+		}
+		pnt := model.Point{}
+		t := ""
+		r.Scan(&pnt.ID, &pnt.Latitude, &pnt.Longitude, &pnt.Order, &t)
+		ct, _ := time.Parse("2006-01-02 15:04:05", t)
+		pnt.CurrentTime = ct
+		pnts = append(pnts, &pnt)
+		count += 1
+	}
+
+	return pnts, nil
 }
 
 func createCourse(crs *model.CourseTest) error {
