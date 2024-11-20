@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/pages/login_page.dart'; // 로그인 페이지로 이동
-import 'dart:convert';
+import 'package:frontend/pages/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupPage extends StatefulWidget {
@@ -14,36 +13,37 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController nicknameController = TextEditingController();
-  final TextEditingController weightController = TextEditingController();
   String errorMessage = '';
 
   Future<void> signup() async {
-    final response = await apiService.signup(
-      usernameController.text,
-      passwordController.text,
-      emailController.text,
-      nicknameController.text,
-      weightController.text,
-    );
-
-    if (response.statusCode == 200) {
-      // 회원가입 후 로그인 페이지로 이동
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('first_login', true); // 첫 로그인 플래그 설정
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginPage(),
-        ),
+    try {
+      final response = await apiService.signup(
+        usernameController.text,
+        passwordController.text,
+        emailController.text,
       );
-    } else if (response.statusCode == 409) {
+
+      if (response.statusCode == 200) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('first_login', true);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoginPage(),
+          ),
+        );
+      } else if (response.statusCode == 409) {
+        setState(() {
+          errorMessage = 'Username already exists. Please try another one.';
+        });
+      } else {
+        setState(() {
+          errorMessage = 'Signup failed. Please try again.';
+        });
+      }
+    } catch (e) {
       setState(() {
-        errorMessage = 'Username already exists. Please try another one.';
-      });
-    } else {
-      setState(() {
-        errorMessage = 'Signup failed. Please try again.';
+        errorMessage = 'An error occurred. Please try again.';
       });
     }
   }
@@ -71,15 +71,6 @@ class _SignupPageState extends State<SignupPage> {
             TextField(
               controller: emailController,
               decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: nicknameController,
-              decoration: InputDecoration(labelText: 'Nickname'),
-            ),
-            TextField(
-              controller: weightController,
-              decoration: InputDecoration(labelText: 'Weight'),
-              keyboardType: TextInputType.number,
             ),
             SizedBox(height: 20),
             ElevatedButton(
