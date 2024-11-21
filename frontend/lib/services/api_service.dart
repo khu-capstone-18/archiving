@@ -7,18 +7,15 @@ class ApiService {
   final String baseUrl = 'http://localhost:8080';
 
   // 회원가입 API
-  Future<http.Response> signup(String username, String password, String email,
-      String nickname, String weight) async {
-    final url = Uri.parse('$baseUrl/auth/signup');
+  Future<http.Response> signup(
+      String username, String password, String email) async {
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
+      Uri.parse('$baseUrl/auth/signup'),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'username': username,
         'password': password,
         'email': email,
-        'nickname': nickname,
-        'weight': weight,
       }),
     );
     return response;
@@ -97,28 +94,17 @@ class ApiService {
   }
 
   // 유저 프로필 업데이트 API
-  Future<http.Response> updateUserProfile(String userId, String profileImage,
-      String nickname, String weeklyGoal, double weight) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-
-    if (token == null || userId == null) {
-      throw Exception('User ID or token not found in local storage');
-    }
-
-    final url = Uri.parse('$baseUrl/users/$userId/profile');
+  Future<http.Response> updateUserProfile(
+      String token, String profileImage, String weeklyGoal) async {
     final response = await http.put(
-      url,
+      Uri.parse('$baseUrl/profile'),
       headers: {
         "Authorization": "Bearer $token",
         "Content-Type": "application/json",
       },
       body: jsonEncode({
-        'user_id': userId,
         'profile_image': profileImage,
-        'nickname': nickname,
         'weekly_goal': weeklyGoal,
-        'weight': weight,
       }),
     );
     return response;
@@ -260,16 +246,22 @@ class ApiService {
   }
 
   // 코스 생성 시작 API
-  Future<Map<String, dynamic>> startCourse(
-      String userId, Map<String, double> startLocation) async {
+  Future<Map<String, dynamic>> startCourse({
+    required String userId,
+    required Map<String, double> location,
+    required String token,
+  }) async {
     final url = Uri.parse('$baseUrl/course/start');
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
       body: jsonEncode({
         'user_id': userId,
-        'location': [startLocation],
-        'current_time': DateTime.now().toIso8601String()
+        'location': location,
+        'current_time': DateTime.now().toIso8601String(),
       }),
     );
 
@@ -281,51 +273,33 @@ class ApiService {
     }
   }
 
-  // 코스 위치 업데이트 API
-  Future<http.Response> updateCourseLocation(String courseId, String userId,
-      List<Map<String, double>> locationList) async {
-    final url = Uri.parse('$baseUrl/course/$courseId/location');
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        'course_id': courseId,
-        'user_id': userId,
-        'location': locationList,
-        'current_time': DateTime.now().toIso8601String(),
-      }),
-    );
-    return response;
-  }
-
   // 코스 종료 API
-  Future<Map<String, dynamic>> endCourse(String courseId, String userId,
-      List<Map<String, double>> locationList) async {
-    final url = Uri.parse('$baseUrl/course/$courseId/end');
+  Future<Map<String, dynamic>> endCourse({
+    required String courseId,
+    required String userId,
+    required Map<String, double> location,
+    required String token,
+  }) async {
+    final url = Uri.parse('$baseUrl/courses/$courseId/end');
+
     final response = await http.post(
       url,
       headers: {
-        "Authorization": "Bearer ${await _getToken()}",
-        "Content-Type": "application/json",
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
       },
       body: jsonEncode({
         'course_id': courseId,
         'user_id': userId,
-        'location': locationList,
-        'current_time': DateTime.now().toIso8601String()
+        'location': location,
+        'current_time': DateTime.now().toIso8601String(),
       }),
     );
 
     if (response.statusCode == 200) {
-      // 빈 응답 처리
-      if (response.body.isEmpty) {
-        print("Received empty response from server.");
-        return {};
-      }
       return jsonDecode(response.body);
     } else {
-      throw Exception(
-          "Failed to end course with status code: ${response.statusCode}");
+      throw Exception("코스 종료 요청 실패: 상태 코드 ${response.statusCode}");
     }
   }
 
@@ -381,6 +355,34 @@ class ApiService {
     } else {
       throw Exception(
           "Failed to load courses with status code: ${response.statusCode}");
+    }
+  }
+
+  // 코스 위치 업데이트
+  Future<void> updateCourseLocation({
+    required String courseId,
+    required String userId,
+    required Map<String, double> location,
+    required String token,
+  }) async {
+    final url = Uri.parse('$baseUrl/courses/$courseId/location');
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        'course_id': courseId,
+        'user_id': userId,
+        'location': location,
+        'current_time': DateTime.now().toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          "Failed to update course location with status code: ${response.statusCode}");
     }
   }
 }
