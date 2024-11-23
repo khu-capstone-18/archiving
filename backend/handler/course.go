@@ -407,15 +407,13 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		childElasedTime += dur
 
 		beforeTime = p.CurrentTime
-		fmt.Println("childElasedTime:", childElasedTime)
-
-		fmt.Println("childDistance:", childDistance)
-		fmt.Println("time.Duration(childDistance):", time.Duration(childDistance))
-		pace := childElasedTime.Seconds() / childDistance
+		fmt.Println("ElasedTime:", int(childElasedTime))
+		fmt.Println("Distance:", strconv.FormatFloat(childDistance, 'f', 2, 64)+"km")
+		pace := (childElasedTime.Seconds()) / childDistance
 		if childDistance == 0 {
 			pace = 0
 		}
-		fmt.Println("pace:", pace)
+		fmt.Println("Pace:", int(pace))
 		childPace = int(pace)
 	}
 

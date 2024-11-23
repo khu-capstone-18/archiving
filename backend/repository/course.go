@@ -53,7 +53,7 @@ func PostPoints(crs *Course, courseId int) error {
 }
 
 func GetCourses() ([]*model.CourseTest, error) {
-	r, err := db.Query(`SELECT id, name, creator_id from coursestest WHERE public = true and copy_course_id = ''`)
+	r, err := db.Query(`SELECT id, name, creator_id from coursestest WHERE copy_course_id = ''`)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func GetCourses() ([]*model.CourseTest, error) {
 }
 
 func CreateCourseStart(crs *model.CourseTest) error {
-	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO coursestest (id, creator_id, copy_course_id) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `')`); err != nil {
 		return err
 	}
 
