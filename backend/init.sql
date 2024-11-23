@@ -9,7 +9,7 @@ CREATE TABLE users (
 	password VARCHAR(100) NOT NULL,
   profile_image TEXT DEFAULT '',
   weight FLOAT NOT NULL,
-  weekly_goal VARCHAR(100) DEFAULT 0,
+  weekly_goal VARCHAR(100) DEFAULT '',
   create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

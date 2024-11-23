@@ -32,7 +32,7 @@ func main() {
 	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
 
 	r.HandleFunc("/users/{userId}/profile", handler.ProfileHandler).Methods("GET")
-	r.HandleFunc("/users/{userId}/profile", handler.UpdateProfileHandler).Methods("PUT")
+	r.HandleFunc("/profile", handler.UpdateProfileHandler).Methods("PUT")
 
 	r.HandleFunc("/users/{userId}/sessions", handler.GetSessionHandler).Methods("GET")
 	r.HandleFunc("/users/{userId}/real-time", handler.StartRealtimeHandler).Methods("POST")

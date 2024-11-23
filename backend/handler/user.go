@@ -93,20 +93,21 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// JWT 생성
-	token, err := auth.GenerateJwtToken(req.Username, 5*time.Minute)
-	if err != nil {
-		fmt.Println("GENERATE JWT ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	uid, err := repository.GetUserID(req.Username)
 	if err != nil {
 		fmt.Println("GETTING USER ID ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// JWT 생성
+	token, err := auth.GenerateJwtToken(uid, 5*time.Minute)
+	if err != nil {
+		fmt.Println("GENERATE JWT ERR:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// 응답
 	response := struct {
 		Message string `json:"message"`
@@ -283,7 +284,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := repository.PutUser(userId, req.ProfileImage, req.WeeklyGoal, strconv.FormatFloat(req.Weight, byte('f'), 1, 64)); err != nil {
+	if err := repository.PutUser(userId, req.ProfileImage, req.WeeklyGoal); err != nil {
 		fmt.Println("PUT USER PROFILE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

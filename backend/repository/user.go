@@ -62,16 +62,13 @@ func GetUser(username string) (*User, error) {
 	return &user, nil
 }
 
-func PutUser(userId, profileImage, weeklyGoal, weight string) error {
+func PutUser(userId, profileImage, weeklyGoal string) error {
 	query := []string{}
 	if profileImage != "" {
 		query = append(query, `profile_image = '`+profileImage+`'`)
 	}
 	if weeklyGoal != "" {
 		query = append(query, `weekly_goal = '`+weeklyGoal+`'`)
-	}
-	if weight != "" {
-		query = append(query, `weight = `+weight)
 	}
 	c := strings.Join(query, ", ")
 
