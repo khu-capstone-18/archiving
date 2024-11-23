@@ -75,13 +75,13 @@ class ApiService {
   Future<http.Response> fetchUserProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
-    String? userId = prefs.getString('user_id');
+    String? username = prefs.getString('user_id');
 
-    if (token == null || userId == null) {
+    if (token == null || username == null) {
       throw Exception('User ID or token not found in local storage');
     }
 
-    final url = Uri.parse('$baseUrl/users/$userId/profile');
+    final url = Uri.parse('$baseUrl/users/${username}/profile');
     final response = await http.get(
       url,
       headers: {
@@ -148,7 +148,7 @@ class ApiService {
   // 러닝 세션 저장 API
   Future<http.Response> saveRunningSession({
     required String token,
-    required String userId,
+    required String user_Id,
     required String startTime,
     required String endTime,
     required double totalDistance,
@@ -157,7 +157,7 @@ class ApiService {
     required String averagePace,
     required double caloriesBurned,
   }) async {
-    final url = Uri.parse('$baseUrl/running/session/$userId');
+    final url = Uri.parse('$baseUrl/running/session/$user_Id');
     final response = await http.post(
       url,
       headers: {
@@ -180,14 +180,10 @@ class ApiService {
   // 실시간 러닝 데이터 전송 API
   Future<void> sendRealTimeRunningData({
     required String token,
-    required String userId,
-    required double currentSpeed,
-    required String currentPace,
-    required int cadence,
-    required String elapsedTime,
+    required String user_Id,
     required Map<String, double> currentLocation,
   }) async {
-    final url = Uri.parse('$baseUrl/running/real-time/$userId');
+    final url = Uri.parse('$baseUrl/running/real-time/$user_Id');
     final response = await http.post(
       url,
       headers: {
@@ -196,25 +192,22 @@ class ApiService {
       },
       body: jsonEncode({
         'current_location': currentLocation,
-        'current_speed': currentSpeed,
-        'current_pace': currentPace,
-        'cadence': cadence,
-        'elapsed_time': elapsedTime,
+        'current_time': DateTime.now().toIso8601String(),
       }),
     );
 
     if (response.statusCode == 200) {
       print('Real-time data sent successfully');
     } else {
-      print('Failed to send real-time data');
+      print('Failed to send real-time data. Response: ${response.body}');
     }
   }
 
   // 러닝 코스 생성 API
   Future<http.Response> createRunningCourse({
-    required String courseId,
+    required String course_Id,
     required String token,
-    required String userId,
+    required String user_Id,
     required String courseName,
     required String description,
     required List<Map<String, double>> route,
@@ -223,7 +216,7 @@ class ApiService {
     required double length,
     required double estimatedTime,
   }) async {
-    final url = Uri.parse('$baseUrl/running/course/$userId');
+    final url = Uri.parse('$baseUrl/running/course/$user_Id');
     final response = await http.post(
       url,
       headers: {
@@ -231,7 +224,7 @@ class ApiService {
         "Content-Type": "application/json",
       },
       body: jsonEncode({
-        'user_id': userId,
+        'user_id': user_Id,
         'course_name': courseName,
         'description': description,
         'start_point': startPoint,
@@ -246,7 +239,7 @@ class ApiService {
 
   // 코스 생성 시작 API
   Future<Map<String, dynamic>> startCourse({
-    required String userId,
+    required String user_Id,
     required Map<String, double> location,
     required String token,
   }) async {
@@ -258,7 +251,44 @@ class ApiService {
         "Authorization": "Bearer $token",
       },
       body: jsonEncode({
-        'user_id': userId,
+        'user_id': user_Id,
+        'location': location,
+        'current_time': DateTime.now().toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      if (responseData.containsKey('course_id')) {
+        return responseData;
+      } else {
+        throw Exception("Response does not contain course_id");
+      }
+    } else {
+      print('Failed to start course. Response: ${response.body}');
+      throw Exception(
+          "Failed to start course with status code: ${response.statusCode}");
+    }
+  }
+
+  // 코스 종료 API
+  Future<Map<String, dynamic>> endCourse({
+    required String course_Id,
+    required String user_Id,
+    required Map<String, double> location,
+    required String token,
+  }) async {
+    final url = Uri.parse('$baseUrl/courses/$course_Id/end');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'course_id': course_Id,
+        'user_id': user_Id,
         'location': location,
         'current_time': DateTime.now().toIso8601String(),
       }),
@@ -268,37 +298,7 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception(
-          "Failed to start course with status code: ${response.statusCode}");
-    }
-  }
-
-  // 코스 종료 API
-  Future<Map<String, dynamic>> endCourse({
-    required String courseId,
-    required String userId,
-    required Map<String, double> location,
-    required String token,
-  }) async {
-    final url = Uri.parse('$baseUrl/courses/$courseId/end');
-
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'course_id': courseId,
-        'user_id': userId,
-        'location': location,
-        'current_time': DateTime.now().toIso8601String(),
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("코스 종료 요청 실패: 상태 코드 ${response.statusCode}");
+          "코스 종료 요청 실패: 상태 코드 ${response.statusCode}, 응답 ${response.body}");
     }
   }
 
@@ -349,12 +349,12 @@ class ApiService {
 
   // 코스 위치 업데이트
   Future<void> updateCourseLocation({
-    required String courseId,
-    required String userId,
+    required String course_Id,
+    required String user_Id,
     required Map<String, double> location,
     required String token,
   }) async {
-    final url = Uri.parse('$baseUrl/courses/$courseId/location');
+    final url = Uri.parse('$baseUrl/courses/$course_Id/location');
     final response = await http.post(
       url,
       headers: {
@@ -362,14 +362,18 @@ class ApiService {
         "Authorization": "Bearer $token",
       },
       body: jsonEncode({
-        'course_id': courseId,
-        'user_id': userId,
-        'location': location,
+        'course_id': course_Id,
+        'user_id': user_Id,
+        'location': {
+          'latitude': location['latitude'],
+          'longitude': location['longitude'],
+        },
         'current_time': DateTime.now().toIso8601String(),
       }),
     );
 
     if (response.statusCode != 200) {
+      print('Failed to update course location. Response: ${response.body}');
       throw Exception(
           "Failed to update course location with status code: ${response.statusCode}");
     }
