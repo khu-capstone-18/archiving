@@ -324,36 +324,26 @@ class ApiService {
     }
   }
 
-  // 러닝 코스 조회
-  Future<List<Map<String, dynamic>>> fetchCourses() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    String? userId = prefs.getString('user_id');
-
-    if (token == null || userId == null) {
-      throw Exception("Token or user ID not found");
-    }
-
-    final url = Uri.parse('$baseUrl/users/$userId/courses');
-    final response = await http.get(
-      url,
-      headers: {
-        "Authorization": "Bearer $token",
-        "Content-Type": "application/json",
-      },
-    );
+  // 전체 유저 러닝 코스 조회
+  Future<List<Map<String, dynamic>>> fetchCourses(String token) async {
+    final url = Uri.parse('$baseUrl/courses');
+    final response = await http.get(url, headers: {
+      'Authorization': 'Bearer $token',
+    });
 
     if (response.statusCode == 200) {
-      final List<dynamic>? courses = jsonDecode(response.body);
-
-      // 서버 응답이 null인 경우 빈 리스트 반환
-      if (courses == null) {
-        return [];
-      }
-      return courses.cast<Map<String, dynamic>>();
+      // 응답 데이터를 파싱하여 반환
+      final List<dynamic> data = json.decode(response.body);
+      return data
+          .map((course) => {
+                'course_id': course['course_id'],
+                'course_name': course['course_name'],
+                'creator_id': course['creator_id'],
+              })
+          .toList();
     } else {
       throw Exception(
-          "Failed to load courses with status code: ${response.statusCode}");
+          'Failed to fetch courses. Status Code: ${response.statusCode}');
     }
   }
 

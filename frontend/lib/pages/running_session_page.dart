@@ -29,11 +29,26 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
     _loadCourses();
   }
 
+  // 전체 코스 데이터 로드
   Future<void> _loadCourses() async {
-    final courses = await apiService.fetchCourses();
-    setState(() {
-      courseList = courses;
-    });
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      if (token != null) {
+        final courses = await apiService.fetchCourses(token);
+        setState(() {
+          courseList = courses;
+        });
+      } else {
+        throw Exception('User token not found');
+      }
+    } catch (e) {
+      print('Error fetching courses: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load courses. Please try again.')),
+      );
+    }
   }
 
   void _startRunningCourse() {
