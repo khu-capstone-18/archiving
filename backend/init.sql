@@ -54,7 +54,7 @@ CREATE TABLE coursestest (
   id VARCHAR(100) PRIMARY KEY,
   name VARCHAR(100) DEFAULT '',
   creator_id VARCHAR(100) NOT NULL,
-  public BOOLEAN NOT NULL,
+  public BOOLEAN,
   copy_course_id VARCHAR(100) DEFAULT ''
 );
 

@@ -44,10 +44,9 @@ func main() {
 	r.HandleFunc("/courses/{courseId}/location", handler.CreateCourseLocaionHandler).Methods("POST")
 	r.HandleFunc("/courses/{courseId}/childs/{childId}/location", handler.CreateCourseLocaionHandler).Methods("POST")
 
-	r.HandleFunc("/course/{courseId}/end", handler.CreateCourseEndHandler).Methods("POST")
+	r.HandleFunc("/courses/{courseId}/end", handler.CreateCourseEndHandler).Methods("POST")
 
 	// r.HandleFunc("/test/{userId}", handler.UpdateProfileHandler).Methods("GET")
-
 	// r.HandleFunc("/auth/reset-password", handler.LogoutHandler).Methods("POST")
 	// r.HandleFunc("/user/profile", handler.LogoutHandler).Methods("PUT")
 	// r.HandleFunc("/user/{user_id}/real-time", handler.LogoutHandler).Methods("POST")

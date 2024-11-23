@@ -23,6 +23,7 @@ type CourseTest struct {
 	CopyCourseID string   `json:"copy_course_id"`
 	Location     Location `json:"location"`
 	CurrentTime  string   `json:"current_time"`
+	Public       bool     `json:"public"`
 }
 
 type Location struct {

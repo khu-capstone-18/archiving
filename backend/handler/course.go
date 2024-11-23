@@ -247,9 +247,16 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
 
-	courses, err := repository.CreateCourseEnd(&req)
+	err = repository.CreateCourseEnd(&req)
 	if err != nil {
 		fmt.Println("ERR CREATECOURSESTESTEND : ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	pnts, err := repository.GetPoints(req.CourseID, 0)
+	if err != nil {
+		fmt.Println("ERR GETTING POINTS : ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -260,15 +267,14 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	var beforeLatitude float64
 	var beforeLongitude float64
 
-	for i, c := range *courses {
-		t, _ := time.Parse("2006-01-02T15:03:04Z", c.CurrentTime)
-		if i == len(*courses)-1 {
-			startTime = t
+	for i, p := range pnts {
+		if i == len(pnts)-1 {
+			endTime = p.CurrentTime
 		}
 		if i == 0 {
-			endTime = t
-			beforeLatitude = c.Location.Latitude
-			beforeLongitude = c.Location.Longitude
+			startTime = p.CurrentTime
+			beforeLatitude = p.Location.Latitude
+			beforeLongitude = p.Location.Longitude
 			continue
 		}
 
@@ -279,12 +285,12 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 				Latitude:  beforeLatitude,
 			},
 			model.Location{
-				Longitude: c.Location.Longitude,
-				Latitude:  c.Location.Latitude,
+				Longitude: p.Location.Longitude,
+				Latitude:  p.Location.Latitude,
 			},
 		)
-		beforeLatitude = c.Location.Latitude
-		beforeLongitude = c.Location.Longitude
+		beforeLatitude = p.Location.Latitude
+		beforeLongitude = p.Location.Longitude
 	}
 
 	totalTime := endTime.Sub(startTime)
@@ -360,12 +366,20 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// child 코스 러닝 데이터 계산
-	childPnts, err := repository.GetPoints(req.CourseID, 1)
+	childPnts, err := repository.GetPoints(req.CourseID, 0)
 	if err != nil {
 		fmt.Println("ERR GETTING CHILD POINTS : ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Println()
+	fmt.Println("START")
+	for _, p := range childPnts {
+		fmt.Println(*p)
+	}
+	fmt.Println("END")
+	fmt.Println()
 
 	childDistance := 0.00
 	childPace := 0
@@ -373,9 +387,10 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	var beforeLocation model.Location
 	beforeTime := time.Time{}
 	for i, p := range childPnts {
-		if i == 1 {
+		if i == 0 {
 			beforeLocation.Latitude = p.Location.Latitude
 			beforeLocation.Longitude = p.Location.Longitude
+			beforeTime = p.CurrentTime
 			continue
 		}
 
@@ -392,9 +407,16 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		childElasedTime += dur
 
 		beforeTime = p.CurrentTime
+		fmt.Println("childElasedTime:", childElasedTime)
 
-		pace := childElasedTime / time.Duration(childDistance)
-		childPace = int(pace.Seconds())
+		fmt.Println("childDistance:", childDistance)
+		fmt.Println("time.Duration(childDistance):", time.Duration(childDistance))
+		pace := childElasedTime.Seconds() / childDistance
+		if childDistance == 0 {
+			pace = 0
+		}
+		fmt.Println("pace:", pace)
+		childPace = int(pace)
 	}
 
 	parentDistance := 0.00

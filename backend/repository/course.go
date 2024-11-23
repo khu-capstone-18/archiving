@@ -53,7 +53,7 @@ func PostPoints(crs *Course, courseId int) error {
 }
 
 func GetCourses() ([]*model.CourseTest, error) {
-	r, err := db.Query(`SELECT id, name, creator_id WHERE public = true and copy_course_id = ''`)
+	r, err := db.Query(`SELECT id, name, creator_id from coursestest WHERE public = true and copy_course_id = ''`)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func GetCourses() ([]*model.CourseTest, error) {
 }
 
 func CreateCourseStart(crs *model.CourseTest) error {
-	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id, public) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `', false)`); err != nil {
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `')`); err != nil {
 		return err
 	}
 
@@ -80,16 +80,16 @@ func CreateCourseStart(crs *model.CourseTest) error {
 	return nil
 }
 
-func CreateCourseEnd(crs *model.CourseTest) (*[]*model.CourseTest, error) {
-	if err := createCourse(crs); err != nil {
-		return nil, err
+func CreateCourseEnd(crs *model.CourseTest) error {
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id, public) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `', ` + strconv.FormatBool(crs.Public) + `)`); err != nil {
+		return err
 	}
 
-	return GetCoursesTest(crs)
+	return nil
 }
 
 func CreatePoint(pnt *model.Point) error {
-	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + pnt.ID + `', '` + pnt.CourseID + `', '` + strconv.FormatFloat(pnt.Location.Latitude, 'f', -1, 64) + `', '` + strconv.FormatFloat(pnt.Location.Longitude, 'f', -1, 64) + `', ` + strconv.Itoa(pnt.Order) + `)`); err != nil {
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + pnt.ID + `', '` + pnt.CourseID + `', '` + strconv.FormatFloat(pnt.Location.Latitude, 'f', 6, 64) + `', '` + strconv.FormatFloat(pnt.Location.Longitude, 'f', 6, 64) + `', ` + strconv.Itoa(pnt.Order) + `)`); err != nil {
 		return err
 	}
 	return nil
@@ -104,7 +104,7 @@ func GetLatestPointOrder(courseId string) int {
 }
 
 func GetPoints(courseId string, length int) ([]*model.Point, error) {
-	r, err := db.Query(`SELECT id, latitude, longitude, "order", "current_time" FROM points WHERE course_id = '` + courseId + `'`)
+	r, err := db.Query(`SELECT id, latitude, longitude, "order", "current_time" FROM points WHERE course_id = '` + courseId + `' ORDER BY "order" ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +113,11 @@ func GetPoints(courseId string, length int) ([]*model.Point, error) {
 	count := 0
 
 	for r.Next() {
-		if count != 0 && count == length {
+		if length != 0 && count == length {
 			break
 		}
 		pnt := model.Point{}
-		t := ""
-		r.Scan(&pnt.ID, &pnt.Location.Latitude, &pnt.Location.Longitude, &pnt.Order, &t)
-		ct, _ := time.Parse("2006-01-02 15:04:05", t)
-		pnt.CurrentTime = ct
+		r.Scan(&pnt.ID, &pnt.Location.Latitude, &pnt.Location.Longitude, &pnt.Order, &pnt.CurrentTime)
 		pnts = append(pnts, &pnt)
 		count += 1
 	}
