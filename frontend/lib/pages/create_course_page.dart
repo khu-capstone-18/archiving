@@ -11,12 +11,13 @@ class CreateCoursePage extends StatefulWidget {
 
 class _CreateCoursePageState extends State<CreateCoursePage> {
   ApiService apiService = ApiService();
-  String? courseId;
+  String? course_Id;
   Timer? locationTimer;
   int secondsElapsed = 0;
   double totalDistance = 0.0;
   String currentPace = "0:00";
   bool isCourseStarted = false;
+  StreamSubscription<Position>? positionStream;
 
   // 현재 위치 가져오기
   Future<Map<String, double>> _getCurrentLocation() async {
@@ -33,9 +34,9 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
-      String? userId = prefs.getString('user_id');
+      String? user_Id = prefs.getString('user_id');
 
-      if (token == null || userId == null) {
+      if (token == null || user_Id == null) {
         throw Exception('User ID or token not found.');
       }
 
@@ -43,20 +44,20 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
       print("Starting location: $startLocation");
 
       final response = await apiService.startCourse(
-        userId: userId,
+        user_Id: user_Id,
         location: startLocation,
         token: token,
       );
 
       if (response.containsKey('course_id')) {
         setState(() {
-          courseId = response['course_id'];
+          course_Id = response['course_id'];
           isCourseStarted = true;
         });
 
-        print("Course started successfully with ID: $courseId");
+        print("Course started successfully with ID: $course_Id");
 
-        _startLocationUpdates(token, userId);
+        _startLocationUpdates(token, user_Id);
       } else {
         print("Failed to start course: Response does not contain course_id");
       }
@@ -69,20 +70,24 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
   }
 
   // 위치 업데이트 시작
-  void _startLocationUpdates(String token, String userId) {
-    locationTimer = Timer.periodic(Duration(seconds: 5), (timer) async {
+  void _startLocationUpdates(String token, String user_Id) {
+    positionStream = Geolocator.getPositionStream(
+      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
+    ).listen((Position position) async {
       try {
-        Map<String, double> currentLocation = await _getCurrentLocation();
+        Map<String, double> currentLocation = {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        };
         await apiService.updateCourseLocation(
-          courseId: courseId!,
-          userId: userId,
+          course_Id: course_Id!,
+          user_Id: user_Id,
           location: currentLocation,
           token: token,
         );
         print("Location updated: $currentLocation");
         setState(() {
           secondsElapsed += 5;
-          _calculatePace();
         });
       } catch (e) {
         print("Error updating location: $e");
@@ -102,20 +107,26 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
   // 코스 종료
   Future<void> _endCourse() async {
+    if (locationTimer != null) {
+      locationTimer!.cancel(); // 타이머 중단
+    }
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
-    String? userId = prefs.getString('user_id');
+    String? user_Id = prefs.getString('user_id');
 
-    if (courseId == null || userId == null || token == null) {
+    if (course_Id == null || user_Id == null || token == null) {
       print("코스 종료에 필요한 데이터가 없습니다.");
       return;
     }
 
     try {
       final endLocation = await _getCurrentLocation();
+      print("코스 종료 위치: $endLocation");
+
       final response = await apiService.endCourse(
-        courseId: courseId!,
-        userId: userId,
+        course_Id: course_Id!,
+        user_Id: user_Id,
         location: endLocation,
         token: token,
       );
@@ -123,19 +134,24 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
       if (response != null && response.containsKey('total_distance')) {
         print('코스 종료 성공: ${response['total_distance']} km');
         setState(() {
-          courseId = null;
+          course_Id = null;
           isCourseStarted = false;
           secondsElapsed = 0;
-          currentPace = "0:00";
           totalDistance = 0.0;
+          currentPace = "0:00";
         });
 
-        locationTimer?.cancel();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Course ended successfully.")),
+        );
       } else {
         print('서버에서 잘못된 응답을 받았습니다.');
       }
     } catch (e) {
       print('코스 종료 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to end course. Please try again.")),
+      );
     }
   }
 

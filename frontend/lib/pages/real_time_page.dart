@@ -11,59 +11,57 @@ class RealTimePage extends StatefulWidget {
 
 class _RealTimePageState extends State<RealTimePage> {
   ApiService apiService = ApiService();
-  late Timer _timer;
-  double _currentSpeed = 0.0;
-  double _totalDistance = 0.0;
-  int _cadence = 0;
+  StreamSubscription<Position>? positionStream; // 위치 스트림
   int _secondsElapsed = 0;
   Position? _currentPosition;
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
-    startRealTimeSession();
+    _startRealTimeTracking(); // 실시간 추적 시작
   }
 
-  void _getCurrentLocation() {
-    Geolocator.getPositionStream().listen((Position position) {
-      setState(() {
-        _currentPosition = position;
-      });
-      sendRealTimeData();
-    });
-  }
-
-  void startRealTimeSession() {
-    _timer = Timer.periodic(Duration(seconds: 1), (Timer timer) {
-      setState(() {
-        _secondsElapsed++;
-        //실제 자이로스코프 데이터를 이용
-        _totalDistance += _currentSpeed;
-      });
-    });
-  }
-
-  // 실시간 데이터 전송 함수
-  void sendRealTimeData() async {
+  // 위치 스트림을 시작하여 데이터를 실시간 전송
+  void _startRealTimeTracking() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
-    String? userId = prefs.getString('user_id');
+    String? user_Id = prefs.getString('user_id');
 
-    if (_currentPosition != null && token != null && userId != null) {
-      await apiService.sendRealTimeRunningData(
-        token: token,
-        userId: userId,
-        currentSpeed: _currentSpeed,
-        currentPace: "${_currentSpeed.toStringAsFixed(2)} km/h",
-        cadence: _cadence,
-        elapsedTime: "$_secondsElapsed",
-        currentLocation: {
-          'latitude': _currentPosition!.latitude,
-          'longitude': _currentPosition!.longitude,
-        },
-      );
+    if (token == null || user_Id == null) {
+      print("User token or ID not found. Unable to start tracking.");
+      return;
     }
+
+    positionStream = Geolocator.getPositionStream(
+      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
+    ).listen((Position position) async {
+      setState(() {
+        _currentPosition = position; // UI에 위치 업데이트
+        _secondsElapsed++; // 경과 시간 증가
+      });
+
+      // 서버로 실시간 데이터 전송
+      try {
+        await apiService.sendRealTimeRunningData(
+          token: token,
+          user_Id: user_Id,
+          currentLocation: {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          },
+        );
+        print(
+            "Real-time data sent: ${position.latitude}, ${position.longitude}");
+      } catch (e) {
+        print("Error sending real-time data: $e");
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    positionStream?.cancel(); // 스트림 해제
+    super.dispose();
   }
 
   @override
@@ -77,17 +75,14 @@ class _RealTimePageState extends State<RealTimePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Time Elapsed: $_secondsElapsed seconds'),
-            Text('Total Distance: ${_totalDistance.toStringAsFixed(2)} km'),
-            Text('Current Speed: ${_currentSpeed.toStringAsFixed(2)} km/h'),
+            if (_currentPosition != null) ...[
+              Text(
+                  'Current Location: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}'),
+            ] else
+              Text('Waiting for location...'),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
   }
 }
