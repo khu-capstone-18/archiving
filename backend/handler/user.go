@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"khu-capstone-18-backend/auth"
+	"khu-capstone-18-backend/model"
 	"khu-capstone-18-backend/repository"
 	"net/http"
 	"strconv"
@@ -16,13 +17,7 @@ import (
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("SIGNUP HANDLER START")
-	req := struct {
-		ID       string `json:"id"`
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Email    string `json:"email"`
-		Weight   string `json:"weight"`
-	}{}
+	req := model.User{}
 
 	b, _ := io.ReadAll(r.Body)
 

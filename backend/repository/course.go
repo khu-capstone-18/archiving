@@ -69,11 +69,11 @@ func GetCourses() ([]*model.CourseTest, error) {
 }
 
 func CreateCourseStart(crs *model.CourseTest) error {
-	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CourseName + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id, public) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `', false)`); err != nil {
 		return err
 	}
 
-	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + crs.CourseID + `', '` + crs.CourseID + `', 'true', 'false', 1)`); err != nil {
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + crs.CourseID + `', '` + crs.CourseID + `', '` + strconv.FormatFloat(crs.Location.Latitude, 'f', 6, 64) + `', '` + strconv.FormatFloat(crs.Location.Longitude, 'f', 6, 64) + `', 1)`); err != nil {
 		return err
 	}
 
@@ -89,7 +89,7 @@ func CreateCourseEnd(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 }
 
 func CreatePoint(pnt *model.Point) error {
-	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude) VALUES ('` + pnt.ID + `', '` + pnt.CourseID + `', '` + strconv.FormatFloat(pnt.Latitude, 'f', -1, 64) + `', '` + strconv.FormatFloat(pnt.Longitude, 'f', -1, 64) + `')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + pnt.ID + `', '` + pnt.CourseID + `', '` + strconv.FormatFloat(pnt.Location.Latitude, 'f', -1, 64) + `', '` + strconv.FormatFloat(pnt.Location.Longitude, 'f', -1, 64) + `', ` + strconv.Itoa(pnt.Order) + `)`); err != nil {
 		return err
 	}
 	return nil
@@ -118,7 +118,7 @@ func GetPoints(courseId string, length int) ([]*model.Point, error) {
 		}
 		pnt := model.Point{}
 		t := ""
-		r.Scan(&pnt.ID, &pnt.Latitude, &pnt.Longitude, &pnt.Order, &t)
+		r.Scan(&pnt.ID, &pnt.Location.Latitude, &pnt.Location.Longitude, &pnt.Order, &t)
 		ct, _ := time.Parse("2006-01-02 15:04:05", t)
 		pnt.CurrentTime = ct
 		pnts = append(pnts, &pnt)

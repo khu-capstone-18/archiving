@@ -360,7 +360,7 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// child 코스 러닝 데이터 계산
-	childPnts, err := repository.GetPoints(req.CourseID, 0)
+	childPnts, err := repository.GetPoints(req.CourseID, 1)
 	if err != nil {
 		fmt.Println("ERR GETTING CHILD POINTS : ", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -374,19 +374,19 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	beforeTime := time.Time{}
 	for i, p := range childPnts {
 		if i == 1 {
-			beforeLocation.Latitude = p.Latitude
-			beforeLocation.Longitude = p.Longitude
+			beforeLocation.Latitude = p.Location.Latitude
+			beforeLocation.Longitude = p.Location.Longitude
 			continue
 		}
 
 		dst := util.CalculateDistance(
 			beforeLocation,
-			model.Location{Longitude: p.Longitude, Latitude: p.Latitude},
+			model.Location{Longitude: p.Location.Longitude, Latitude: p.Location.Latitude},
 		)
 		childDistance += dst
 
-		beforeLocation.Latitude = p.Latitude
-		beforeLocation.Longitude = p.Longitude
+		beforeLocation.Latitude = p.Location.Latitude
+		beforeLocation.Longitude = p.Location.Longitude
 
 		dur := p.CurrentTime.Sub(beforeTime)
 		childElasedTime += dur
@@ -413,19 +413,19 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		parentBeforeTime := time.Time{}
 		for i, p := range parentPnts {
 			if i == 1 {
-				parentBeforeLocation.Latitude = p.Latitude
-				parentBeforeLocation.Longitude = p.Longitude
+				parentBeforeLocation.Latitude = p.Location.Latitude
+				parentBeforeLocation.Longitude = p.Location.Longitude
 				continue
 			}
 
 			dst := util.CalculateDistance(
 				parentBeforeLocation,
-				model.Location{Longitude: p.Longitude, Latitude: p.Latitude},
+				model.Location{Longitude: p.Location.Longitude, Latitude: p.Location.Latitude},
 			)
 			parentDistance += dst
 
-			parentBeforeLocation.Latitude = p.Latitude
-			parentBeforeLocation.Longitude = p.Longitude
+			parentBeforeLocation.Latitude = p.Location.Latitude
+			parentBeforeLocation.Longitude = p.Location.Longitude
 
 			dur := p.CurrentTime.Sub(parentBeforeTime)
 			parentElasedTime += dur
