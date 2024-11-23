@@ -6,19 +6,18 @@ import 'package:shared_preferences/shared_preferences.dart'; // SharedPreference
 class ApiService {
   final String baseUrl = 'http://localhost:8080';
 
-  // 회원가입 API
+  // 회원가입
   Future<http.Response> signup(
-      String username, String password, String email) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/signup'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-        'email': email,
-      }),
-    );
-    return response;
+      String username, String password, String email, String weight) async {
+    final url = Uri.parse('$baseUrl/auth/signup');
+    final body = jsonEncode({
+      'username': username,
+      'password': password,
+      'email': email,
+      'weight': weight,
+    });
+    return await http.post(url,
+        headers: {'Content-Type': 'application/json'}, body: body);
   }
 
   // 로그인 API
