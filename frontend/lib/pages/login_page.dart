@@ -17,36 +17,50 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   String errorMessage = '';
 
-  Future<void> login() async {
-    final response = await apiService.login(
-      usernameController.text,
-      passwordController.text,
-    );
+  Future<void> _login(String username, String password) async {
+    try {
+      final response = await apiService.login(username, password);
 
-    if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('token', responseData['token']);
-      await prefs.setString('user_id', responseData['user_id']);
+      print('Server response: ${response.body}'); // 서버 응답 디버깅
 
-      bool firstLogin = prefs.getBool('first_login') ?? true;
-      print("Is first login: $firstLogin");
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      if (firstLogin) {
-        await prefs.setBool('first_login', false);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => ProfileEditPage()),
-        );
-        print("Navigating to Profile Edit Page."); // 프로필 업데이트 페이지 이동 로그
+        // 서버 응답에서 필드가 존재하는지 확인
+        if (data['token'] == null || data['user_id'] == null) {
+          throw Exception('Invalid server response: Missing token or user_id.');
+        }
+
+        // SharedPreferences에 token과 user_id 저장
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setString('user_id', data['user_id']); // 수정된 부분
+
+        // 첫 로그인 여부 확인 및 처리
+        bool firstLogin = prefs.getBool('first_login') ?? true;
+
+        print("Is first login: $firstLogin");
+
+        if (firstLogin) {
+          await prefs.setBool('first_login', false);
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ProfileEditPage()),
+          );
+          print("Navigating to Profile Edit Page.");
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => RunningSessionPage()),
+          );
+          print("Navigating to Running Session Page.");
+        }
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => RunningSessionPage()),
-        );
-        print("Navigating to Running Session Page."); // 러닝 세션 페이지 이동 로그
+        throw Exception(
+            'Login failed with status code: ${response.statusCode}');
       }
-    } else {
+    } catch (e) {
+      print('Error during login: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed. Please try again.')),
       );
@@ -75,7 +89,10 @@ class _LoginPageState extends State<LoginPage> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: login,
+              onPressed: () => _login(
+                usernameController.text,
+                passwordController.text,
+              ),
               child: Text('Login'),
             ),
             TextButton(

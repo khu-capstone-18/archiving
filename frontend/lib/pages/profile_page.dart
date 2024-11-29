@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/services/api_service.dart';
-import 'package:frontend/pages/login_page.dart';
-import 'package:frontend/pages/running_session_page.dart';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/services/api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -11,164 +8,97 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late Future<Map<String, dynamic>> userProfile;
-  ApiService apiService = ApiService();
-
-  Future<Map<String, String>> getTokenAndUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    String? userId = prefs.getString('user_id');
-    if (token == null || userId == null) {
-      throw Exception("Token or User ID not found");
-    }
-    return {'token': token, 'user_id': userId};
-  }
-
-  // 프로필 정보 가져오기
-  /*
-  Future<Map<String, dynamic>> fetchUserProfile() async {
-    try {
-      final response = await apiService.fetchUserProfile();
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-
-        // Best Record 데이터가 있는 경우만 가져오기
-        if (responseData['best_record'] != null) {
-          responseData['best_record'] = responseData['best_record'];
-        } else {
-          // Best Record가 없을 경우 기본값 설정
-          responseData['best_record'] = {'distance': 0, 'time': 0};
-        }
-
-        return responseData;
-      } else {
-        throw Exception('Failed to load profile');
-      }
-    } catch (e) {
-      print('Error fetching profile: $e');
-      throw Exception('Error fetching profile');
-    }
-  }
-*/
-  // 프로필 정보 가져오기
-  Future<Map<String, dynamic>> fetchUserProfile() async {
-    try {
-      final response = await apiService.fetchUserProfile();
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData; // 서버 응답을 그대로 사용
-      } else {
-        throw Exception('Failed to load profile');
-      }
-    } catch (e) {
-      print('Error fetching profile: $e');
-      return {
-        'username': 'Unknown',
-        'profile_image': '',
-        'total_distance': 0,
-        'total_time': 0,
-        'best_record': {'distance': 0, 'time': 0},
-        'weekly_goal': 0
-      };
-    }
-  }
+  final ApiService apiService = ApiService();
+  Map<String, dynamic>? userProfile;
+  String? token;
+  String? username;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    userProfile = fetchUserProfile();
+    fetchUserProfile();
   }
 
-  // 로그아웃 처리 함수
-  Future<void> logout() async {
+  Future<void> _loadPreferencesAndFetchProfile() async {
     try {
-      // 서버에 로그아웃 요청
-      final response = await apiService.logout();
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      token = prefs.getString('token');
+      username = prefs.getString('username');
 
-      if (response.statusCode == 200) {
-        // 로그아웃 성공 시 SharedPreferences에서 토큰과 user_id 삭제
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.remove('token');
-        await prefs.remove('user_id');
-
-        // 로그인 페이지로 이동
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      } else {
-        // 로그아웃 실패 시 사용자에게 알림
-        print('Logout failed with status: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logout failed. Please try again.')),
-        );
+      if (token == null || username == null) {
+        throw Exception('Username or token not found in local storage.');
       }
+
+      await fetchUserProfile();
     } catch (e) {
-      // 네트워크 오류 등 예외 발생 시 처리
-      print('Error during logout: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred. Please try again later.')),
+      print('Error fetching user profile: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> fetchUserProfile() async {
+    try {
+      final response = await apiService.fetchUserProfile(
+        token: token!,
+        username: username!,
       );
+
+      setState(() {
+        userProfile = response;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Profile')),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (userProfile == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text('Profile')),
+        body: Center(child: Text('Failed to load user profile.')),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('User Profile'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: logout,
-          ),
-        ],
-      ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: userProfile,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.hasData) {
-            final profileData = snapshot.data!;
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Username: ${profileData['username']}'),
-                  Text('Profile Image: ${profileData['profile_image']}'),
-                  Text('Total Distance: ${profileData['total_distance']} km'),
-                  Text('Total Time: ${profileData['total_time']}'),
-                  Text(
-                      'Best Record - Distance: ${profileData['best_record']['distance']} km'),
-                  Text(
-                      'Best Record - Time: ${profileData['best_record']['time']}'),
-                  Text('Weekly Goal: ${profileData['weekly_goal']} km'),
-                  SizedBox(height: 20),
-                  // 프로필 페이지에서 러닝 세션으로 이동하는 버튼
-                  ElevatedButton(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('first_login', false);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => RunningSessionPage(),
-                        ),
-                      );
-                    },
-                    child: Text('Go to Running Session'),
-                  ),
-                ],
+      appBar: AppBar(title: Text('Profile')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (userProfile!['profile_image'] != null)
+              Image.network(
+                userProfile!['profile_image'],
+                height: 100,
+                width: 100,
               ),
-            );
-          } else {
-            return Center(child: Text('No data available'));
-          }
-        },
+            Text('Username: ${userProfile!['username']}'),
+            Text('Total Distance: ${userProfile!['total_distance']} km'),
+            Text('Total Time: ${userProfile!['total_time']} mins'),
+            if (userProfile!['best_record'] != null) ...[
+              Text(
+                  'Best Record - Distance: ${userProfile!['best_record']['distance']} km'),
+              Text(
+                  'Best Record - Time: ${userProfile!['best_record']['time']} mins'),
+            ],
+            Text('Weekly Goal: ${userProfile!['weekly_goal']} km'),
+          ],
+        ),
       ),
     );
   }

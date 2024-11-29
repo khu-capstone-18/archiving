@@ -29,8 +29,18 @@ class _SignupPageState extends State<SignupPage> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', responseData['token']);
-        await prefs.setString('user_id', responseData['user_id']);
+
+        try {
+          await prefs.setBool('first_login', true);
+          await prefs.setString('token', responseData['token']);
+          await prefs.setString('user_id', responseData['user_id']);
+        } catch (e) {
+          setState(() {
+            errorMessage = 'Failed to save user data. Please try again.';
+          });
+          return; // 에러 발생 시 추가 동작 중단
+        }
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoginPage()),

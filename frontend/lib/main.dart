@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/login_page.dart';
-import 'package:frontend/pages/profile_page.dart';
+import 'package:frontend/pages/profile_edit_page.dart';
 import 'package:frontend/pages/running_session_page.dart';
 import 'package:frontend/pages/signup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,12 +26,15 @@ class MyApp extends StatelessWidget {
 
     if (token != null && userId != null) {
       if (firstLogin) {
-        return ProfilePage(); // 첫 로그인 시 프로필 페이지로 이동
+        // 첫 로그인 시 ProfileEditPage로 이동
+        return ProfileEditPage();
       } else {
-        return RunningSessionPage(); // 이후에는 러닝 세션 페이지로 이동
+        // 이후의 로그인은 RunningSessionPage로 이동
+        return RunningSessionPage();
       }
     } else {
-      return LoginPage(); // 로그인 상태가 아니면 로그인 페이지로 이동
+      // 로그인 상태가 아닌 경우 LoginPage로 이동
+      return LoginPage();
     }
   }
 
