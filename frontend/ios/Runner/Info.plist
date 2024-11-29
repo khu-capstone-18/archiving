@@ -24,8 +24,6 @@
     <true/>
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
-    <key>UIMainStoryboardFile</key>
-    <string>Main</string>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
@@ -43,9 +41,17 @@
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+
     <!-- Google Maps API Key 설정 -->
     <key>GMSApiKey</key>
     <string>AIzaSyBfodyYHJelWM59wGNqJWPI3w3WmcKoEKk</string>
+
+    <!-- 위치 권한 요청 -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>앱 사용 중 위치 정보 접근 권한이 필요합니다.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>앱 사용 중 또는 백그라운드에서 위치 정보 접근 권한이 필요합니다.</string>
+
     <key>io.flutter.embedded_views_preview</key>
     <true/>
 </dict>

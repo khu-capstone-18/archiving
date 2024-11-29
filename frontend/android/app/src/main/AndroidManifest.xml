@@ -1,22 +1,21 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.frontend">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- 위치 권한 추가 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- 인터넷 권한 추가 (Google Maps 사용 시 필요) -->
+    <!-- 인터넷 권한 추가 -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:label="frontend"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true"> <!-- 네트워크 통신에 대한 설정 -->
+        android:usesCleartextTraffic="true"> <!-- 네트워크 통신 허용 -->
 
         <!-- Google Maps API Key 설정 -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBfodyYHJelWM59wGNqJWPI3w3WmcKoEKk" /> 
+            android:value="AIzaSyBfodyYHJelWM59wGNqJWPI3w3WmcKoEKk" />
 
         <activity
             android:name=".MainActivity"
