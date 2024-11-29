@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
-import 'package:frontend/pages/profile_page.dart';
+import 'package:frontend/pages/running_session_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileEditPage extends StatefulWidget {
@@ -32,20 +32,27 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
     final response = await apiService.updateUserProfile(
       token!,
-      profileImageController.text,
-      weeklyGoalController.text,
+      profileImageController.text.isNotEmpty
+          ? profileImageController.text
+          : "default_image.png",
+      weeklyGoalController.text.isNotEmpty ? weeklyGoalController.text : "0",
     );
 
     if (response.statusCode == 200) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('first_login', false); // 첫 로그인 플래그 제거
+      await prefs.setString('username', 'YOUR_USERNAME'); // username 저장
+      await prefs.setString('token', token!); // token 저장
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => ProfilePage(),
+          builder: (context) => RunningSessionPage(),
         ),
       );
     } else {
       setState(() {
-        errorMessage = 'Profile update failed';
+        errorMessage = 'Profile update failed. Please try again.';
       });
     }
   }
