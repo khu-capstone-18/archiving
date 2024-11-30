@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
 
 class ApiService {
-  final String baseUrl = 'http://localhost:8080';
+  final String baseUrl = "http://172.30.1.32:8080"; // PC의 IPv4 주소
 
   // 회원가입
   Future<http.Response> signup(

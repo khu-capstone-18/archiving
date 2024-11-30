@@ -1,41 +1,42 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
-    namespace = "com.example.runningapp"
-    compileSdk = 34// Flutter 최신 compileSdkVersion 적용
-
-    ndkVersion = flutter.ndkVersion
+    namespace = "com.example.frontend"
+    compileSdk = 34 // 최신 SDK 버전 적용
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17 // Java 17 사용 설정
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "17" // Kotlin JVM 타겟 설정
     }
 
     defaultConfig {
-        applicationId = "com.example.runningapp" // 고유한 Application ID로 변경
-        minSdk = 21 // 최소 SDK 버전, 일반적으로 21 이상 권장
-        targetSdk = 34 // Flutter 최신 targetSdkVersion
-        versionCode = 1 // 앱의 빌드 버전 코드
-        versionName = "1.0" // 앱의 버전 이름
+        applicationId = "com.example.frontend"
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
     }
 
     buildTypes {
-         release {
+        release {
             signingConfig = signingConfigs.debug
-
-            // 릴리스 빌드 최적화 옵션
-            shrinkResources false // 리소스 축소 비활성화
-            minifyEnabled false   // 코드 축소 비활성화
+            shrinkResources false
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17) // JVM Toolchain 설정
         }
     }
 }
