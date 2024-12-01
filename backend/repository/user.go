@@ -53,9 +53,9 @@ func GetPasswordByEmail(email string) (password string, err error) {
 	return pw, nil
 }
 
-func GetUser(username string) (*User, error) {
+func GetUser(uid string) (*User, error) {
 	user := User{}
-	r := db.QueryRow(`SELECT username, email, profile_image, weekly_goal, weight FROM users WHERE username='` + username + `'`)
+	r := db.QueryRow(`SELECT username, email, profile_image, weekly_goal, weight FROM users WHERE id='` + uid + `'`)
 	if err := r.Scan(&user.Username, &user.Email, &user.ProfileImage, &user.WeeklyGoal, &user.Weight); err != nil {
 		return &user, err
 	}

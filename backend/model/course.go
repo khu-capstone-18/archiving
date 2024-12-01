@@ -6,7 +6,7 @@ import (
 
 type Course struct {
 	ID            int
-	UserID        int           `json:"user_id"`
+	UserID        string        `json:"user_id"`
 	Name          string        `json:"course_name"`
 	Route         []*Point      `json:"route"`
 	Description   string        `json:"description"`

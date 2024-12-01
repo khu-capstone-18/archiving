@@ -3,21 +3,18 @@ package repository
 import (
 	"khu-capstone-18-backend/model"
 	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 type Course struct {
-	ID            int
-	UserID        int           `json:"user_id"`
-	Name          string        `json:"course_name"`
-	Route         []*Point      `json:"route"`
-	Description   string        `json:"description"`
-	StartPoint    *Point        `json:"start_point"`
-	EndPoint      *Point        `json:"end_point"`
-	Length        float64       `json:"length"`
-	EstimatedTime time.Duration `json:"estimated_time"`
+	ID           int
+	UserID       string            `json:"user_id"`
+	Name         string            `json:"course_name"`
+	Route        []*model.Location `json:"route"`
+	Description  string            `json:"description"`
+	CopyCourseID string            `json:"copy_course_id"`
+	Public       bool              `json:"public"`
 }
 
 type Point struct {
@@ -27,33 +24,23 @@ type Point struct {
 	Longitude float64 `json:"longitude"`
 }
 
-func PostCourse(crs *Course) int {
-	r := db.QueryRow(`INSERT INTO courses (user_id, name, description, length, estimated_time) VALUES (` + strconv.Itoa(crs.UserID) + `, '` + crs.Name + `', '` + crs.Description + `', ` + strconv.FormatFloat(crs.Length, byte('f'), 2, 64) + `, '` + crs.EstimatedTime.String() + `' RETURNING id)`)
+func PostCourse(crs *Course) (string, error) {
+	id := uuid.NewString()
+	_, err := db.Exec(`INSERT INTO courses (id, creator_id, name, description, public, copy_course_id) VALUES ('` + id + `', '` + crs.UserID + `', '` + crs.Name + `', '` + crs.Description + `', ` + strconv.FormatBool(crs.Public) + `, '` + crs.CopyCourseID + `')`)
 
-	id := 0
-	r.Scan(&id)
-	return id
+	return id, err
 }
 
-func PostPoints(crs *Course, courseId int) error {
-	if _, err := db.Exec(`INSERT INTO points (course_id, latitude, longitude, start_point, end_point, order) VALUES (` + strconv.Itoa(courseId) + `, '` + strconv.FormatFloat(crs.StartPoint.Latitude, byte('f'), 6, 64) + `', '` + strconv.Itoa(courseId) + `, '` + strconv.FormatFloat(crs.StartPoint.Longitude, byte('f'), 6, 64) + `', 'true', 'false', 0)`); err != nil {
+func PostPoint(loc *model.Location, courseId string, order int) error {
+	id := uuid.NewString()
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + id + `', '` + courseId + `', ` + strconv.FormatFloat(loc.Latitude, byte('f'), 6, 64) + `, ` + strconv.FormatFloat(loc.Longitude, byte('f'), 6, 64) + `, ` + strconv.Itoa(order) + `)`); err != nil {
 		return err
-	}
-
-	if _, err := db.Exec(`INSERT INTO points (course_id, latitude, longitude, start_point, end_point, order) VALUES (` + strconv.Itoa(courseId) + `, '` + strconv.Itoa(courseId) + `, '` + strconv.FormatFloat(crs.EndPoint.Latitude, byte('f'), 6, 64) + `', '` + strconv.Itoa(courseId) + `, '` + strconv.FormatFloat(crs.EndPoint.Longitude, byte('f'), 6, 64) + `', 'false', 'true', 0)`); err != nil {
-		return err
-	}
-
-	for i, _ := range crs.Route {
-		if _, err := db.Exec(`INSERT INTO points (course_id, latitude, longitude, start_point, end_point, order) VALUES (` + strconv.Itoa(courseId) + `, '` + strconv.Itoa(courseId) + `, '` + strconv.FormatFloat(crs.Route[i].Latitude, byte('f'), 6, 64) + `', '` + strconv.Itoa(courseId) + `, '` + strconv.FormatFloat(crs.Route[i].Longitude, byte('f'), 6, 64) + `', 'false', 'false', ` + strconv.Itoa(i) + `)`); err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
 func GetCourses() ([]*model.CourseTest, error) {
-	r, err := db.Query(`SELECT id, name, creator_id from coursestest WHERE copy_course_id = ''`)
+	r, err := db.Query(`SELECT id, name, creator_id from courses WHERE public = true`)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +67,8 @@ func CreateCourseStart(crs *model.CourseTest) error {
 	return nil
 }
 
-func CreateCourseEnd(crs *model.CourseTest) error {
-	if _, err := db.Exec(`INSERT INTO coursestest (id, name, creator_id, copy_course_id, public) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `', ` + strconv.FormatBool(crs.Public) + `)`); err != nil {
+func CreateCourseEnd(public bool, courseId string) error {
+	if _, err := db.Exec(`UPDATE courses SET public = ` + strconv.FormatBool(public) + ` WHERE id = '` + courseId + `'`); err != nil {
 		return err
 	}
 

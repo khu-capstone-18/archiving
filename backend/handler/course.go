@@ -34,11 +34,7 @@ func PostCourseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := repository.Course{
-		StartPoint: &repository.Point{},
-		EndPoint:   &repository.Point{},
-		Route:      []*repository.Point{},
-	}
+	req := repository.Course{}
 
 	b, _ := io.ReadAll(r.Body)
 	if err := json.Unmarshal(b, &req); err != nil {
@@ -47,16 +43,15 @@ func PostCourseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courseId := repository.PostCourse(&req)
+	courseId, err := repository.PostCourse(&req)
 	if err != nil {
 		fmt.Println("POST COURSE ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = repository.PostPoints(&req, courseId)
-	if err != nil {
-		fmt.Println("POST POINTS ERR:", err)
+	if err := repository.PostPoint(req.Route[0], courseId, 1); err != nil {
+		fmt.Println("POST INITIAL POINT ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -67,7 +62,7 @@ func PostCourseHandler(w http.ResponseWriter, r *http.Request) {
 		CourseID string `json:"course_id"`
 	}{
 		Message:  "Course created successfully.",
-		CourseID: strconv.Itoa(courseId),
+		CourseID: courseId,
 	}
 
 	resp, err := json.Marshal(response)
@@ -247,7 +242,7 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
 
-	err = repository.CreateCourseEnd(&req)
+	err = repository.CreateCourseEnd(req.Public, req.CourseID)
 	if err != nil {
 		fmt.Println("ERR CREATECOURSESTESTEND : ", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -407,7 +402,7 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		childElasedTime += dur
 
 		beforeTime = p.CurrentTime
-		fmt.Println("ElasedTime:", int(childElasedTime))
+		fmt.Println("ElasedTime:", childElasedTime)
 		fmt.Println("Distance:", strconv.FormatFloat(childDistance, 'f', 2, 64)+"km")
 		pace := (childElasedTime.Seconds()) / childDistance
 		if childDistance == 0 {
