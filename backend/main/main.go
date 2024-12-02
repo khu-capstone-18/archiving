@@ -37,7 +37,6 @@ func main() {
 	r.HandleFunc("/users/{userId}/sessions", handler.GetSessionHandler).Methods("GET")
 	r.HandleFunc("/users/{userId}/real-time", handler.StartRealtimeHandler).Methods("POST")
 	r.HandleFunc("/courses", handler.GetCoursesHandler).Methods("GET")
-	r.HandleFunc("/course", handler.PostCourseHandler).Methods("POST")
 
 	r.HandleFunc("/course/start", handler.CreateCourseStartHandler).Methods("POST")
 	r.HandleFunc("/courses/{courseId}/child/start", handler.CreateChildCourseStartHandler).Methods("POST")

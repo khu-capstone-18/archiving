@@ -16,67 +16,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func PostCourseHandler(w http.ResponseWriter, r *http.Request) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
-		fmt.Println("NO JWT TOKEN EXIST ERROR")
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	// Bearer 토큰 추출
-	t := authHeader[7:]
-
-	_, err := auth.ValidateJwtToken(t)
-	if err != nil {
-		fmt.Println("JWT TOKEN VALIDATION ERR:", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	req := repository.Course{}
-
-	b, _ := io.ReadAll(r.Body)
-	if err := json.Unmarshal(b, &req); err != nil {
-		fmt.Println("UNMARSHAL ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	courseId, err := repository.PostCourse(&req)
-	if err != nil {
-		fmt.Println("POST COURSE ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := repository.PostPoint(req.Route[0], courseId, 1); err != nil {
-		fmt.Println("POST INITIAL POINT ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// 응답
-	response := struct {
-		Message  string `json:"message"`
-		CourseID string `json:"course_id"`
-	}{
-		Message:  "Course created successfully.",
-		CourseID: courseId,
-	}
-
-	resp, err := json.Marshal(response)
-	if err != nil {
-		fmt.Println("JSON MARSHALING ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-}
-
 func CreateChildCourseStartHandler(w http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
@@ -98,12 +37,12 @@ func CreateChildCourseStartHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	courseId := vars["courseId"]
 
-	req := model.CourseTest{}
+	req := repository.Course{}
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
 
-	req.CourseID = uuid.NewString()
-	req.CreatorID = userId
+	req.ID = uuid.NewString()
+	req.UserID = userId
 	req.CopyCourseID = courseId
 
 	if err := repository.CreateCourseStart(&req); err != nil {
@@ -116,7 +55,7 @@ func CreateChildCourseStartHandler(w http.ResponseWriter, r *http.Request) {
 		CourseID     string `json:"course_id"`
 		CopyCourseID string `json:"copy_course_id"`
 	}{
-		CourseID:     req.CourseID,
+		CourseID:     req.ID,
 		CopyCourseID: req.CopyCourseID,
 	}
 
@@ -194,12 +133,12 @@ func CreateCourseStartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := model.CourseTest{}
+	req := repository.Course{}
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
 
-	req.CourseID = uuid.NewString()
-	req.CreatorID = userId
+	req.ID = uuid.NewString()
+	req.UserID = userId
 
 	if err := repository.CreateCourseStart(&req); err != nil {
 		fmt.Println("Create Course Start Handler Err:", err)
@@ -210,7 +149,7 @@ func CreateCourseStartHandler(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		CourseID string `json:"course_id"`
 	}{
-		CourseID: req.CourseID,
+		CourseID: req.ID,
 	}
 
 	data, _ := json.Marshal(resp)

@@ -8,13 +8,13 @@ import (
 )
 
 type Course struct {
-	ID           int
-	UserID       string            `json:"user_id"`
-	Name         string            `json:"course_name"`
-	Route        []*model.Location `json:"route"`
-	Description  string            `json:"description"`
-	CopyCourseID string            `json:"copy_course_id"`
-	Public       bool              `json:"public"`
+	ID           string         `json:"id"`
+	UserID       string         `json:"user_id"`
+	Name         string         `json:"course_name"`
+	Location     model.Location `json:"location"`
+	Description  string         `json:"description"`
+	CopyCourseID string         `json:"copy_course_id"`
+	Public       bool           `json:"public"`
 }
 
 type Point struct {
@@ -39,6 +39,19 @@ func PostPoint(loc *model.Location, courseId string, order int) error {
 	return nil
 }
 
+func CreateCourseStart(crs *Course) error {
+	courseId := uuid.NewString()
+	if _, err := db.Exec(`INSERT INTO courses (id, creator_id, name, description, public, copy_course_id) VALUES ('` + courseId + `', '` + crs.UserID + `', '` + crs.Name + `', '` + crs.Description + `','` + crs.ID + `', ` + strconv.FormatBool(crs.Public) + `,'` + crs.CopyCourseID + `')`); err != nil {
+		return err
+	}
+
+	pointId := uuid.NewString()
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + pointId + `', '` + courseId + `', ` + strconv.FormatFloat(crs.Location.Latitude, byte('f'), 6, 64) + `, ` + strconv.FormatFloat(crs.Location.Longitude, byte('f'), 6, 64) + `, 0)`); err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetCourses() ([]*model.CourseTest, error) {
 	r, err := db.Query(`SELECT id, name, creator_id from courses WHERE public = true`)
 	if err != nil {
@@ -53,18 +66,6 @@ func GetCourses() ([]*model.CourseTest, error) {
 	}
 
 	return courses, nil
-}
-
-func CreateCourseStart(crs *model.CourseTest) error {
-	if _, err := db.Exec(`INSERT INTO coursestest (id, creator_id, copy_course_id) VALUES ('` + crs.CourseID + `', '` + crs.CreatorID + `', '` + crs.CopyCourseID + `')`); err != nil {
-		return err
-	}
-
-	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + crs.CourseID + `', '` + crs.CourseID + `', '` + strconv.FormatFloat(crs.Location.Latitude, 'f', 6, 64) + `', '` + strconv.FormatFloat(crs.Location.Longitude, 'f', 6, 64) + `', 1)`); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func CreateCourseEnd(public bool, courseId string) error {
