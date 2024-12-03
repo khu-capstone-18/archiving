@@ -40,13 +40,12 @@ func PostPoint(loc *model.Location, courseId string, order int) error {
 }
 
 func CreateCourseStart(crs *Course) error {
-	courseId := uuid.NewString()
-	if _, err := db.Exec(`INSERT INTO courses (id, creator_id, name, description, public, copy_course_id) VALUES ('` + courseId + `', '` + crs.UserID + `', '` + crs.Name + `', '` + crs.Description + `','` + crs.ID + `', ` + strconv.FormatBool(crs.Public) + `,'` + crs.CopyCourseID + `')`); err != nil {
+	if _, err := db.Exec(`INSERT INTO courses (id, creator_id, public, copy_course_id) VALUES ('` + crs.ID + `', '` + crs.UserID + `', ` + strconv.FormatBool(crs.Public) + `,'` + crs.CopyCourseID + `')`); err != nil {
 		return err
 	}
 
 	pointId := uuid.NewString()
-	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + pointId + `', '` + courseId + `', ` + strconv.FormatFloat(crs.Location.Latitude, byte('f'), 6, 64) + `, ` + strconv.FormatFloat(crs.Location.Longitude, byte('f'), 6, 64) + `, 0)`); err != nil {
+	if _, err := db.Exec(`INSERT INTO points (id, course_id, latitude, longitude, "order") VALUES ('` + pointId + `', '` + crs.ID + `', ` + strconv.FormatFloat(crs.Location.Latitude, byte('f'), 6, 64) + `, ` + strconv.FormatFloat(crs.Location.Longitude, byte('f'), 6, 64) + `, 1)`); err != nil {
 		return err
 	}
 	return nil
@@ -142,3 +141,20 @@ func GetCoursesTest(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 
 	return &courses, nil
 }
+
+// func GetCourseDistance(courseID string) (string, error) {
+// 	r, err := db.Query(`SELECT id, name, creator_id, latitude, longitude, "current_time" FROM coursestest WHERE id = '` + crs.CourseID + `'`)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	course := model.CourseTest{}
+// 	courses := []*model.CourseTest{}
+
+// 	for r.Next() {
+// 		r.Scan(&course.CourseID, &course.CourseName, &course.CreatorID, &course.Location.Latitude, &course.Location.Longitude, &course.CurrentTime)
+// 		courses = append(courses, &course)
+// 	}
+
+// 	return &courses, nil
+// }

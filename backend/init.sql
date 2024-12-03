@@ -20,6 +20,8 @@ CREATE TABLE courses (
   public BOOLEAN DEFAULT false,
   description TEXT DEFAULT '',
   copy_course_id VARCHAR(100) DEFAULT '',
+  total_distance VARCHAR(100) DEFAULT '0.00',
+  total_time VARCHAR(100) DEFAULT '0',
   FOREIGN KEY (creator_id) REFERENCES users(id)
 );
 

@@ -201,14 +201,15 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	record, err := GetBestRecordByUserId(userId)
+	bestDistance, bestTime, err := GetBestRecordByUserId(userId)
 	if err != nil {
-		fmt.Println("GET USER'S BEST RECORD ERR:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		fmt.Println("USER DOES NOT HAVE BEST RECORD")
+		bestDistance = "0.00"
+		bestTime = 0.0
 	}
+	f, _ := strconv.ParseFloat(bestDistance, 64)
 
-	totalDistance, totalTime, err := GetTotalDistanceAndTime(userId)
+	totalDistance, totalTime, err := repository.GetUserTotalRecord(userId)
 	if err != nil {
 		fmt.Println("GET USER'S TOTAL RECORD DATA ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -217,28 +218,28 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 응답
 	response := struct {
-		UserID        string `json:"user_id"`
-		Username      string `json:"username"`
-		ProfileImage  string `json:"profile_image"`
-		TotalDistance string `json:"total_distance"`
-		TotalTime     string `json:"total_time"`
+		UserID        string  `json:"user_id"`
+		Username      string  `json:"username"`
+		ProfileImage  string  `json:"profile_image"`
+		TotalDistance float64 `json:"total_distance"`
+		TotalTime     int     `json:"total_time"`
 		BestRecord    struct {
 			Distance float64 `json:"distance"`
-			Time     string  `json:"time"`
+			Time     int     `json:"time"`
 		} `json:"best_record"`
 		WeeklyGoal string `json:"weekly_goal"`
 		Nickname   string `json:"nickname"`
 	}{
 		Username:      u.Username,
 		ProfileImage:  u.ProfileImage,
-		TotalDistance: strconv.FormatFloat(totalDistance, byte('f'), 2, 64),
-		TotalTime:     totalTime.String(),
+		TotalDistance: totalDistance,
+		TotalTime:     int(totalTime.Seconds()),
 		BestRecord: struct {
 			Distance float64 "json:\"distance\""
-			Time     string  "json:\"time\""
+			Time     int     "json:\"time\""
 		}{
-			Distance: record.Distance,
-			Time:     record.Time,
+			Distance: f,
+			Time:     int(bestTime.Seconds()),
 		},
 		WeeklyGoal: u.WeeklyGoal,
 		Nickname:   u.Nickname,
@@ -310,8 +311,8 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
-func GetBestRecordByUserId(userId string) (*repository.Session, error) {
-	return repository.GetBestRecordByUserId(userId)
+func GetBestRecordByUserId(userId string) (bestDistance string, bestTime time.Duration, err error) {
+	return repository.GetUserBestRecord(userId)
 }
 
 func GetTotalDistanceAndTime(userId string) (totalDistance float64, totalTime time.Duration, err error) {

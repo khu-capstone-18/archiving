@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"database/sql"
+	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -87,4 +90,51 @@ func GetUserWeight(userId int) (int, error) {
 		return weight, err
 	}
 	return weight, nil
+}
+
+func UpdateCourseRecord(cid, distance string, t time.Duration) error {
+	bestDst, bestTime := "", ""
+	r := db.QueryRow(`SELECT total_distance, total_time FROM courses WHERE id='` + cid + `'`)
+	r.Scan(&bestDst, &bestTime)
+
+	f1, _ := strconv.ParseFloat(distance, 32)
+	f2, _ := strconv.ParseFloat(bestDst, 32)
+	if f1 > f2 {
+		db.Exec(`UPDATE courses SET total_distance = '` + distance + `', total_time = '` + t.String() + `' WHERE id = '` + cid + `'`)
+	}
+
+	return nil
+}
+
+func GetUserBestRecord(uid string) (bestDistance string, bestTime time.Duration, err error) {
+	bestDst := ""
+	var bTime time.Duration
+	r := db.QueryRow(`SELECT total_distance, total_time FROM courses ORDER BY total_distance DESC WHERE creator_id='` + uid + `' LIMIT 1`)
+	if err := r.Scan(&bestDst, &bTime); err == sql.ErrNoRows {
+		return bestDst, bTime, err
+	}
+	fmt.Println("bestDst:", bestDst)
+	fmt.Println("bestTime:", bTime)
+
+	return bestDst, bTime, nil
+}
+
+func GetUserTotalRecord(uid string) (totaltDistance float64, totalTime time.Duration, err error) {
+	tDistance := 0.0
+	var tTime time.Duration
+	r, err := db.Query(`SELECT total_distance, total_time FROM courses WHERE creator_id='` + uid + `'`)
+	if err != nil {
+		return 0.0, 0, err
+	}
+
+	for r.Next() {
+		tmpDistance := 0.0
+		tmpTime := ""
+		r.Scan(&tmpDistance, &tmpTime)
+		t, _ := time.ParseDuration(tmpTime)
+		tTime += t
+		tDistance += tmpDistance
+	}
+
+	return tDistance, tTime, nil
 }

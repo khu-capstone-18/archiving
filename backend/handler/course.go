@@ -181,13 +181,6 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
 
-	err = repository.CreateCourseEnd(req.Public, req.CourseID)
-	if err != nil {
-		fmt.Println("ERR CREATECOURSESTESTEND : ", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	pnts, err := repository.GetPoints(req.CourseID, 0)
 	if err != nil {
 		fmt.Println("ERR GETTING POINTS : ", err)
@@ -231,12 +224,20 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	totalPaceSecond := totalTime.Seconds() / totalDistance
 	m := int(totalPaceSecond / 1)
 	s := int((totalPaceSecond - float64(int(totalPaceSecond))) * 60)
-	totalPace := fmt.Sprint("%d:%d", m, s)
+	totalPace := fmt.Sprintf("%d:%d", m, s)
 	if err != nil {
 		fmt.Println("ERR PARSING TIME:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	err = repository.CreateCourseEnd(req.Public, req.CourseID)
+	if err != nil {
+		fmt.Println("ERR CREATECOURSESTESTEND : ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	repository.UpdateCourseRecord(req.CourseID, fmt.Sprintf("%.2f", totalDistance), totalTime)
 
 	resp := struct {
 		TotalPace     string        `json:"total_pace"`
@@ -244,7 +245,7 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 		TotalTime     time.Duration `json:"total_time"`
 	}{
 		TotalPace:     totalPace,
-		TotalDistance: fmt.Sprint("%.2fkm", totalDistance),
+		TotalDistance: fmt.Sprintf("%.2fkm", totalDistance),
 		TotalTime:     totalTime,
 	}
 
