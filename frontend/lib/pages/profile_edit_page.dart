@@ -40,10 +40,17 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
     if (response.statusCode == 200) {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('first_login', false); // 첫 로그인 플래그 제거
-      await prefs.setString('username', 'YOUR_USERNAME'); // username 저장
-      await prefs.setString('token', token!); // token 저장
 
+      // first_login 값을 false로 설정
+      await prefs.setBool('first_login', false);
+      print("프로필 업데이트 완료: first_login 상태를 false로 설정");
+
+      // SharedPreferences 상태 디버깅
+      print("프로필 업데이트 후 SharedPreferences 상태:");
+      print(" - token: ${prefs.getString('token')}");
+      print(" - first_login: ${prefs.getBool('first_login')}");
+
+      print("Navigating to RunningSessionPage after profile update.");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -54,6 +61,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       setState(() {
         errorMessage = 'Profile update failed. Please try again.';
       });
+      print("Profile update failed with status code: ${response.statusCode}");
     }
   }
 

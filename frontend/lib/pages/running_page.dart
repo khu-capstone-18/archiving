@@ -58,10 +58,11 @@ class _RunningPageState extends State<RunningPage> {
 
   Future<void> _updateSoloRunning(Map<String, double> currentLocation) async {
     try {
-      final response = await apiService.updateCourseLocation(
-        courseId: widget.course['course_id'],
-        location: currentLocation,
+      final response = await apiService.sendSoloData(
         token: await apiService.getToken(),
+        courseId: widget.course['course_id'],
+        latitude: currentLocation['latitude']!,
+        longitude: currentLocation['longitude']!,
       );
       setState(() {
         currentPace = response['current_pace'].toString();
@@ -76,12 +77,13 @@ class _RunningPageState extends State<RunningPage> {
   Future<void> _updateFollowingRunning(
       Map<String, double> currentLocation) async {
     try {
-      final response = await apiService.updateRunningSessionLocation(
+      final response = await apiService.sendFollowingData(
+        token: await apiService.getToken(),
         courseId: widget.course['course_id'],
         userId: widget.course['creator_id'], // 서버에서 받는 userId 사용
-        location: currentLocation,
+        latitude: currentLocation['latitude']!,
+        longitude: currentLocation['longitude']!,
         currentTime: DateTime.now().toIso8601String(),
-        token: await apiService.getToken(),
       );
       setState(() {
         currentPace = response['current_pace'];
@@ -105,8 +107,10 @@ class _RunningPageState extends State<RunningPage> {
       ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
-          target: LatLng(widget.course['start_point']['latitude'],
-              widget.course['start_point']['longitude']),
+          target: LatLng(
+            widget.course['start_point']['latitude'],
+            widget.course['start_point']['longitude'],
+          ),
           zoom: 14.0,
         ),
         markers: markers,

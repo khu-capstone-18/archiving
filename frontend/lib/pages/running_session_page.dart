@@ -21,7 +21,16 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
   @override
   void initState() {
     super.initState();
+    _logSharedPreferencesState();
     _loadCourses();
+  }
+
+  Future<void> _logSharedPreferencesState() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    print("러닝 세션 페이지 초기화 상태:");
+    print(" - token: ${prefs.getString('token')}");
+    print(" - user_id: ${prefs.getString('user_id')}");
+    print(" - first_login: ${prefs.getBool('first_login')}");
   }
 
   // 전체 코스 데이터 로드
@@ -86,7 +95,11 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
 
     final response = await apiService.logout(token);
     if (response.statusCode == 200) {
-      await prefs.clear();
+      // 필요한 데이터만 삭제
+      await prefs.remove('token'); // 토큰 삭제
+      await prefs.remove('user_id'); // 사용자 ID 삭제
+      print("Logout completed. first_login 상태 유지.");
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
