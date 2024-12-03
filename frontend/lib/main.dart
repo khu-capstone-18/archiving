@@ -11,21 +11,16 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
 
-  // SharedPreferences 초기화 및 디버깅
-  await resetSharedPreferences(prefs); // 테스트 시 SharedPreferences 초기화
-  debugSharedPreferences(prefs);
-
+  // 초기화 로직
   if (!prefs.containsKey('first_login')) {
+    print("first_login 값이 없으므로 기본값(true) 설정");
     await prefs.setBool('first_login', true);
   }
 
-  runApp(MyApp());
-}
+  // SharedPreferences 상태 디버깅
+  debugSharedPreferences(prefs);
 
-/// SharedPreferences 초기화 함수 (테스트용)
-Future<void> resetSharedPreferences(SharedPreferences prefs) async {
-  await prefs.clear(); // 모든 데이터 초기화
-  await prefs.setBool('first_login', true); // 첫 로그인 플래그 기본값 설정
+  runApp(MyApp());
 }
 
 /// SharedPreferences 디버깅 함수
@@ -64,14 +59,15 @@ class MyApp extends StatelessWidget {
     // 토큰이 유효하고 사용자 정보가 있는 경우
     if (token != null && userId != null) {
       if (firstLogin) {
-        // 첫 로그인 상태라면 프로필 편집 페이지로 이동
+        print("Navigating to Profile Edit Page (First Login)");
         return ProfileEditPage();
       } else {
-        // 이후 로그인 시 러닝 세션 페이지로 이동
+        print("Navigating to Running Session Page");
         return RunningSessionPage();
       }
     } else {
       // 로그인 상태가 아닌 경우 로그인 페이지로 이동
+      print("Navigating to Login Page");
       return LoginPage();
     }
   }

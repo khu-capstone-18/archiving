@@ -18,10 +18,16 @@ class _LoginPageState extends State<LoginPage> {
   String errorMessage = '';
 
   Future<void> _login(String username, String password) async {
+    print("Login method called");
+    print("Attempting login with:");
+    print(" - username: $username");
+
     try {
       final response = await apiService.login(username, password);
 
-      print('Server response: ${response.body}'); // 서버 응답 디버깅
+      print("Login API response:");
+      print(" - Status code: ${response.statusCode}");
+      print(" - Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -34,11 +40,11 @@ class _LoginPageState extends State<LoginPage> {
         // SharedPreferences에 token과 user_id 저장
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
-        await prefs.setString('user_id', data['user_id']); // 수정된 부분
+        await prefs.setString('user_id', data['user_id']);
+        await prefs.setString('username', username); // 입력한 username 저장
 
         // 첫 로그인 여부 확인 및 처리
         bool firstLogin = prefs.getBool('first_login') ?? true;
-
         print("Is first login: $firstLogin");
 
         if (firstLogin) {
