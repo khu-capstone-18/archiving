@@ -41,9 +41,28 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
 
       if (token != null) {
         final courses = await apiService.fetchCourses(token);
+
+        // 데이터 검증 및 디버깅
+        if (courses == null || courses.isEmpty) {
+          print("Fetched courses are empty or null.");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No courses available.')),
+          );
+          return;
+        }
+
+        // 각 코스 데이터의 필수 필드 확인
+        for (var course in courses) {
+          print("Course data: $course");
+          if (course['course_name'] == null || course['course_name'].isEmpty) {
+            print("Course with missing name: $course");
+          }
+        }
+
         setState(() {
           courseList = courses;
         });
+        print("Successfully loaded courses: $courseList");
       } else {
         throw Exception('User token not found');
       }
@@ -152,9 +171,10 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
               });
             },
             items: courseList.map((course) {
+              final courseName = course['course_name'] ?? "Unnamed Course";
               return DropdownMenuItem<Map<String, dynamic>>(
                 value: course,
-                child: Text(course['course_name']),
+                child: Text(courseName),
               );
             }).toList(),
           ),
