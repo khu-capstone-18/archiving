@@ -32,45 +32,124 @@ class _RunningPageState extends State<RunningPage> {
   }
 
   void _startRunning() {
+    if (positionStream != null) {
+      print('Position stream is already active.');
+      return;
+    }
+
     positionStream = Geolocator.getPositionStream(
-      locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
-    ).listen((Position position) async {
-      Map<String, double> currentLocation = {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-      };
+      locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen(
+      (Position position) async {
+        try {
+          Map<String, double> currentLocation = {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          };
 
-      if (widget.mode == "solo") {
-        _updateSoloRunning(currentLocation);
-      } else if (widget.mode == "following") {
-        _updateFollowingRunning(currentLocation);
+          print('Location update: $currentLocation'); // 위치 업데이트 로그
+
+          if (widget.mode == "solo") {
+            await _updateSoloRunning(currentLocation);
+          } else if (widget.mode == "following") {
+            await _updateFollowingRunning(currentLocation);
+          }
+
+          setState(() {
+            markers.add(Marker(
+              markerId: MarkerId("current"),
+              position: LatLng(position.latitude, position.longitude),
+            ));
+            route.add(LatLng(position.latitude, position.longitude));
+            print('Current route: $route'); // 경로 로그
+          });
+        } catch (e) {
+          print('Error processing position data: $e');
+        }
+      },
+      onError: (error) {
+        print('Position stream error: $error');
+      },
+    );
+
+    print('Position stream started successfully.');
+  }
+
+  LatLng _getInitialCameraPosition() {
+    try {
+      final startPoint = widget.course['start_point'];
+
+      if (startPoint != null &&
+          startPoint is Map &&
+          startPoint.containsKey('latitude') &&
+          startPoint.containsKey('longitude') &&
+          startPoint['latitude'] != null &&
+          startPoint['longitude'] != null &&
+          startPoint['latitude'] is double &&
+          startPoint['longitude'] is double) {
+        return LatLng(
+          startPoint['latitude'],
+          startPoint['longitude'],
+        );
+      } else {
+        print('Invalid or missing start_point data: $startPoint');
       }
-
-      setState(() {
-        markers.add(Marker(
-          markerId: MarkerId("current"),
-          position: LatLng(position.latitude, position.longitude),
-        ));
-        route.add(LatLng(position.latitude, position.longitude));
-      });
-    });
+    } catch (e) {
+      print('Error parsing start_point: $e');
+    }
+    print('Using default initial camera position.');
+    return LatLng(37.5665, 126.9780);
   }
 
   Future<void> _updateSoloRunning(Map<String, double> currentLocation) async {
-    try {
-      final response = await apiService.sendSoloData(
-        token: await apiService.getToken(),
-        courseId: widget.course['course_id'],
-        latitude: currentLocation['latitude']!,
-        longitude: currentLocation['longitude']!,
-      );
-      setState(() {
-        currentPace = response['current_pace'].toString();
-        totalDistance = double.parse(response['total_distance']);
-        elapsedTime = int.parse(response['elapsed_time']);
-      });
-    } catch (e) {
-      print("Error updating solo running: $e");
+    print('Route before sending to server: $route');
+
+    int retryCount = 0;
+    const int maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+      try {
+        print('Sending location: $currentLocation'); // API 호출 데이터 로그
+        final response = await apiService.sendSoloData(
+          token: await apiService.getToken(),
+          courseId: widget.course['course_id'],
+          latitude: currentLocation['latitude']!,
+          longitude: currentLocation['longitude']!,
+        );
+        print('Response: $response'); // 서버 응답 로그
+
+        // **TypeError 문제 해결**
+        if (response == null) {
+          throw Exception('Server response is null');
+        }
+
+        // **서버 응답 검증 추가**
+        if (response == null ||
+            response['current_pace'] == null ||
+            response['total_distance'] == null ||
+            response['elapsed_time'] == null) {
+          print('Invalid server response: $response');
+          throw Exception('Server response validation failed');
+        }
+
+        setState(() {
+          currentPace = response['current_pace'].toString();
+          totalDistance = double.parse(response['total_distance']);
+          elapsedTime = int.parse(response['elapsed_time']);
+          print(
+              'Updated stats: pace=$currentPace, distance=$totalDistance, time=$elapsedTime');
+        });
+        return; // 성공적으로 전송된 경우 종료
+      } catch (e) {
+        retryCount++;
+        print('Error sending location (Retry $retryCount): $e');
+        if (retryCount == maxRetries) {
+          print('Max retries reached. Failed to send location.');
+        }
+      }
     }
   }
 
@@ -85,14 +164,34 @@ class _RunningPageState extends State<RunningPage> {
         longitude: currentLocation['longitude']!,
         currentTime: DateTime.now().toIso8601String(),
       );
+      print('Response: $response'); // 서버 응답 로그
+
+      // **TypeError 문제 해결**
+      if (response == null) {
+        throw Exception('Server response is null');
+      }
+
       setState(() {
-        currentPace = response['current_pace'];
-        totalDistance = double.parse(response['total_distance']);
-        elapsedTime = int.parse(response['elapsed_time']);
+        currentPace =
+            response['current_pace']?.toString() ?? "0:00"; // String으로 변환
+        totalDistance =
+            double.tryParse(response['total_distance']?.toString() ?? "0.0") ??
+                0.0; // 타입 변환 및 기본값 설정
+        elapsedTime =
+            int.tryParse(response['elapsed_time']?.toString() ?? "0") ??
+                0; // 타입 변환 및 기본값 설정
         locationGap = {
-          'latitude': response['location_gap']['latitude'],
-          'longitude': response['location_gap']['longitude'],
+          'latitude': double.tryParse(
+                  response['location_gap']?['latitude']?.toString() ?? "0.0") ??
+              0.0,
+          'longitude': double.tryParse(
+                  response['location_gap']?['longitude']?.toString() ??
+                      "0.0") ??
+              0.0,
         };
+
+        print(
+            'Updated stats: pace=$currentPace, distance=$totalDistance, time=$elapsedTime');
       });
     } catch (e) {
       print("Error updating following running: $e");
@@ -107,10 +206,7 @@ class _RunningPageState extends State<RunningPage> {
       ),
       body: GoogleMap(
         initialCameraPosition: CameraPosition(
-          target: LatLng(
-            widget.course['start_point']['latitude'],
-            widget.course['start_point']['longitude'],
-          ),
+          target: _getInitialCameraPosition(),
           zoom: 14.0,
         ),
         markers: markers,
@@ -128,6 +224,10 @@ class _RunningPageState extends State<RunningPage> {
   @override
   void dispose() {
     positionStream?.cancel();
+    print('Position stream cancelled.');
+    markers.clear();
+    route.clear();
+    print('Markers and route cleared.');
     super.dispose();
   }
 }

@@ -32,14 +32,20 @@ void debugSharedPreferences(SharedPreferences prefs) {
 }
 
 class MyApp extends StatelessWidget {
-  Future<void> _checkPermissions() async {
+  Future<void> _checkAndRequestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        print('Location permission denied.');
+        return;
+      }
     }
     if (permission == LocationPermission.deniedForever) {
-      print("위치 권한이 영구적으로 거부되었습니다.");
+      print('Location permission permanently denied.');
+      return;
     }
+    print('Location permission granted.');
   }
 
   Future<Widget> _determineStartPage() async {
@@ -78,7 +84,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: FutureBuilder<Widget>(
-        future: _checkPermissions().then((_) => _determineStartPage()),
+        future: _checkAndRequestPermission().then((_) => _determineStartPage()),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());

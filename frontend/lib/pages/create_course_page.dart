@@ -106,6 +106,8 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         route.add(LatLng(position.latitude, position.longitude));
       });
 
+      print('Route after starting course: $route');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Course creation started!')),
       );
@@ -131,6 +133,8 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
       );
       return;
     }
+
+    print('Route before ending course: $route');
 
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -158,13 +162,17 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
       setState(() {
         isCreatingCourse = false;
+        print('Route before clearing: $route'); // 초기화 전 로그
         route.clear();
       });
+
+      print('Course ended successfully with response: $response');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Course created! Total Distance: ${response['total_distance']} km'),
+            'Course created! Total Distance: ${response['total_distance']} km',
+          ),
         ),
       );
     } catch (e) {
