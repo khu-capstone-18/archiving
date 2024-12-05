@@ -93,11 +93,19 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
     );
   }
 
-  void _navigateToCreateCourse() {
-    Navigator.push(
+  void _navigateToCreateCourse() async {
+    print("Navigating to CreateCoursePage...");
+    final courseCreated = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => CreateCoursePage()),
     );
+
+    print("Returned from CreateCoursePage. courseCreated: $courseCreated");
+    if (courseCreated == true) {
+      print("Course creation detected. Reloading courses...");
+      await _loadCourses(); // 코스 갱신
+      print("Courses reloaded. Current course list: $courseList");
+    }
   }
 
   Future<void> _logout() async {
