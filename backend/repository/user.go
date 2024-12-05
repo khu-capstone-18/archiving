@@ -100,7 +100,7 @@ func UpdateCourseRecord(cid, distance string, t time.Duration) error {
 	f1, _ := strconv.ParseFloat(distance, 32)
 	f2, _ := strconv.ParseFloat(bestDst, 32)
 	if f1 > f2 {
-		db.Exec(`UPDATE courses SET total_distance = '` + distance + `', total_time = '` + t.String() + `' WHERE id = '` + cid + `'`)
+		db.Exec(`UPDATE courses SET total_distance = '` + distance + `', total_time = '` + strconv.Itoa(int(t.Seconds())) + `' WHERE id = '` + cid + `'`)
 	}
 
 	return nil

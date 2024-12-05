@@ -36,7 +36,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// JWT 토큰 생성
-	token, err := auth.GenerateJwtToken(id, time.Hour)
+	token, err := auth.GenerateJwtToken(id, time.Hour*1200)
 	if err != nil {
 		fmt.Println("GENERATE JWT TOKEN ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -101,7 +101,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// JWT 생성
-	token, err := auth.GenerateJwtToken(uid, time.Hour)
+	token, err := auth.GenerateJwtToken(uid, time.Hour*1200)
 	if err != nil {
 		fmt.Println("GENERATE JWT ERR:", err)
 		w.WriteHeader(http.StatusInternalServerError)
