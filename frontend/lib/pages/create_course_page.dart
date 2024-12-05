@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -17,6 +18,11 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
   String? courseId;
   TextEditingController courseNameController = TextEditingController();
   bool isPublic = false;
+
+  Timer? locationTimer; // 위치 전송 타이머
+  String currentPace = "0:00";
+  String totalDistance = "0.0 km";
+  String elapsedTime = "0:00";
 
   @override
   Widget build(BuildContext context) {
@@ -46,35 +52,44 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: courseNameController,
-              decoration: InputDecoration(
-                labelText: "Course Name",
-                border: OutlineInputBorder(),
-              ),
+            child: Column(
+              children: [
+                TextField(
+                  controller: courseNameController,
+                  decoration: InputDecoration(
+                    labelText: "Course Name",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SwitchListTile(
+                  title: Text("Public Course"),
+                  value: isPublic,
+                  onChanged: (value) {
+                    setState(() {
+                      isPublic = value;
+                    });
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: isCreatingCourse ? null : _startCourseCreation,
+                      child: Text("Create & Start Course"),
+                    ),
+                    ElevatedButton(
+                      onPressed: isCreatingCourse ? _endCourseCreation : null,
+                      child: Text("End Course"),
+                    ),
+                  ],
+                ),
+                if (isCreatingCourse) ...[
+                  Text("Current Pace: $currentPace min/km"),
+                  Text("Total Distance: $totalDistance"),
+                  Text("Elapsed Time: $elapsedTime sec"),
+                ],
+              ],
             ),
-          ),
-          SwitchListTile(
-            title: Text("Public Course"),
-            value: isPublic,
-            onChanged: (value) {
-              setState(() {
-                isPublic = value;
-              });
-            },
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ElevatedButton(
-                onPressed: isCreatingCourse ? null : _startCourseCreation,
-                child: Text("Create & Start Course"),
-              ),
-              ElevatedButton(
-                onPressed: isCreatingCourse ? _endCourseCreation : null,
-                child: Text("End Course"),
-              ),
-            ],
           ),
         ],
       ),
@@ -83,6 +98,16 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
   Future<void> _startCourseCreation() async {
     try {
+      // 코스 이름 검증 및 기본값 설정
+      String courseName = courseNameController.text.trim();
+      if (courseName.isEmpty) {
+        courseName = "Untitled Course"; // 기본값 설정
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Course name is empty. Using "Untitled Course".')),
+        );
+      }
+
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -106,7 +131,8 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         route.add(LatLng(position.latitude, position.longitude));
       });
 
-      print('Route after starting course: $route');
+      // 실시간 위치 전송 시작
+      _startLocationUpdates();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Course creation started!')),
@@ -119,7 +145,50 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
     }
   }
 
+  void _navigateBack() {
+    print("Navigating back to RunningSessionPage with success.");
+    Navigator.pop(context, true);
+  }
+
+  void _startLocationUpdates() {
+    locationTimer = Timer.periodic(Duration(seconds: 5), (timer) async {
+      try {
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? token = prefs.getString('token');
+
+        if (token == null || courseId == null)
+          throw Exception('Token or Course ID not found');
+
+        final response = await apiService.sendSoloData(
+          token: token,
+          courseId: courseId!,
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+
+        setState(() {
+          currentPace =
+              response['current_pace']?.toString() ?? "0"; // int -> String
+          totalDistance =
+              response['total_distance'] ?? "0.0 km"; // string 그대로 사용
+          elapsedTime =
+              (response['elapsed_time'] ?? 0).toString(); // int -> String
+        });
+      } catch (e) {
+        print("Error sending solo data: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send location data. Retrying...')),
+        );
+      }
+    });
+  }
+
   Future<void> _endCourseCreation() async {
+    locationTimer?.cancel(); // 실시간 위치 전송 중단
     if (courseId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Course creation not started yet.')),
@@ -127,14 +196,11 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
       return;
     }
 
-    if (courseNameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter a course name.')),
-      );
-      return;
+    // 코스 이름 검증 및 기본값 설정
+    String courseName = courseNameController.text.trim();
+    if (courseName.isEmpty) {
+      courseName = "Untitled Course"; // 기본값 설정
     }
-
-    print('Route before ending course: $route');
 
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -147,7 +213,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
       final response = await apiService.endCourse(
         courseId: courseId!,
-        courseName: courseNameController.text,
+        courseName: courseName,
         public: isPublic,
         userId: userId,
         location: route.map((point) {
@@ -162,17 +228,13 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
       setState(() {
         isCreatingCourse = false;
-        print('Route before clearing: $route'); // 초기화 전 로그
         route.clear();
       });
-
-      print('Course ended successfully with response: $response');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Course created! Total Distance: ${response['total_distance']} km',
-          ),
+              'Course created! Total Distance: ${response['total_distance']} km'),
         ),
       );
     } catch (e) {
@@ -181,5 +243,11 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         SnackBar(content: Text('Failed to end course creation.')),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    locationTimer?.cancel();
+    super.dispose();
   }
 }
