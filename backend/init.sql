@@ -31,7 +31,8 @@ CREATE TABLE points (
   latitude VARCHAR(100) NOT NULL,
   longitude VARCHAR(100) NOT NULL,
   "order" INT DEFAULT 0,
-  "current_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  "current_time" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (course_id) REFERENCES courses(id)
 );
 
 -- export PATH=$HOME/flutter/bin:$PATH 
