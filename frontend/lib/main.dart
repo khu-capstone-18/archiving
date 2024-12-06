@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pages/first_page.dart';
+import 'package:frontend/pages/second_page.dart';
 import 'package:frontend/pages/login_page.dart';
 import 'package:frontend/pages/profile_edit_page.dart';
 import 'package:frontend/pages/running_session_page.dart';
@@ -9,28 +11,30 @@ import 'package:geolocator/geolocator.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final prefs = await SharedPreferences.getInstance();
+  runApp(FirstPageApp()); // 앱 실행 시 FirstPage부터 시작
+}
 
-  // 초기화 로직
-  if (!prefs.containsKey('first_login')) {
-    print("first_login 값이 없으므로 기본값(true) 설정");
-    await prefs.setBool('first_login', true);
+/// FirstPage를 먼저 보여주는 앱
+class FirstPageApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter App',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => FirstPage(), // 앱 시작 시 보여줄 첫 페이지
+        '/second': (context) => SecondPage(), // 두 번째 페이지
+        '/login': (context) => LoginPage(), // 로그인 페이지
+        '/signup': (context) => SignupPage(), // 회원가입 페이지
+        '/profileEdit': (context) => ProfileEditPage(), // 프로필 수정
+        '/runningSession': (context) => RunningSessionPage(), // 러닝 세션
+      },
+    );
   }
-
-  // SharedPreferences 상태 디버깅
-  debugSharedPreferences(prefs);
-
-  runApp(MyApp());
 }
 
-/// SharedPreferences 디버깅 함수
-void debugSharedPreferences(SharedPreferences prefs) {
-  print("SharedPreferences 상태:");
-  print(" - token: ${prefs.getString('token')}");
-  print(" - user_id: ${prefs.getString('user_id')}");
-  print(" - first_login: ${prefs.getBool('first_login')}");
-}
-
+/// Main 앱 로직을 실행하는 MyApp
 class MyApp extends StatelessWidget {
   Future<void> _checkAndRequestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
@@ -80,29 +84,31 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: FutureBuilder<Widget>(
-        future: _checkAndRequestPermission().then((_) => _determineStartPage()),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            // 에러 처리
-            return Center(child: Text("Error: ${snapshot.error}"));
-          } else if (snapshot.hasData) {
-            // 올바른 데이터를 반환받았을 때
-            return snapshot.data as Widget; // 타입 캐스팅
-          } else {
-            return LoginPage();
-          }
-        },
-      ),
-      routes: {
-        '/signup': (context) => SignupPage(),
-        '/profileEdit': (context) => ProfileEditPage(),
-        '/runningSession': (context) => RunningSessionPage(),
+    return FutureBuilder<Widget>(
+      future: _checkAndRequestPermission().then((_) => _determineStartPage()),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(
+            home: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError) {
+          return MaterialApp(
+            home: Center(child: Text("Error: ${snapshot.error}")),
+          );
+        } else if (snapshot.hasData) {
+          return MaterialApp(
+            home: snapshot.data as Widget,
+            routes: {
+              '/signup': (context) => SignupPage(),
+              '/profileEdit': (context) => ProfileEditPage(),
+              '/runningSession': (context) => RunningSessionPage(),
+            },
+          );
+        } else {
+          return MaterialApp(
+            home: LoginPage(),
+          );
+        }
       },
     );
   }

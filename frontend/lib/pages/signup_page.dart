@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/pages/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,16 +12,23 @@ class SignupPage extends StatefulWidget {
 
 class _SignupPageState extends State<SignupPage> {
   ApiService apiService = ApiService();
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController weightController = TextEditingController();
+  final TextEditingController usernameController =
+      TextEditingController(); // 아이디
+  final TextEditingController emailController = TextEditingController(); // 이메일
+  final TextEditingController passwordController =
+      TextEditingController(); // 비밀번호
+  final TextEditingController weightController = TextEditingController(); // 체중
+
   String errorMessage = '';
+  bool isLoading = false;
 
+  // 회원가입 함수
   Future<void> signup() async {
-    print('Signup method called');
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
 
-    // SharedPreferences 초기화
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     print("회원가입 완료 후 SharedPreferences 상태:");
@@ -77,48 +85,127 @@ class _SignupPageState extends State<SignupPage> {
         errorMessage = 'An error occurred. Please try again.';
       });
       print('Error during signup: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Signup'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: weightController,
-              decoration: InputDecoration(labelText: 'Weight'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: signup,
-              child: Text('Sign Up'),
-            ),
-            if (errorMessage.isNotEmpty)
-              Text(
-                errorMessage,
-                style: TextStyle(color: Colors.red),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 40.0, vertical: 30.0),
+                child: Column(
+                  children: [
+                    Text(
+                      '회원가입',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 28,
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 30),
+                    _buildTextField('아이디', usernameController),
+                    SizedBox(height: 20),
+                    _buildTextField('이메일', emailController),
+                    SizedBox(height: 20),
+                    _buildTextField('비밀번호', passwordController),
+                    SizedBox(height: 20),
+                    _buildTextField('체중', weightController),
+                    SizedBox(height: 40),
+                    ElevatedButton(
+                      onPressed: signup,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFEC6E4F),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(40),
+                        ),
+                        minimumSize: Size(317, 50),
+                      ),
+                      child: Text(
+                        '회원가입',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontFamily: 'Lato',
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '이미 계정이 있나요? ',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontFamily: 'Lato',
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '로그인',
+                            style: TextStyle(
+                              color: Color(0xFFEC6E4F),
+                              fontSize: 16,
+                              fontFamily: 'Lato',
+                              fontWeight: FontWeight.w400,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LoginPage(),
+                                  ),
+                                );
+                              },
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20.0),
+                        child: Text(
+                          errorMessage,
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-          ],
+            ),
+    );
+  }
+
+  // 텍스트 입력 필드 생성 함수
+  Widget _buildTextField(String hintText, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hintText,
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Color(0xFFEC6E4F), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Color(0xFFEC6E4F), width: 2),
         ),
       ),
     );

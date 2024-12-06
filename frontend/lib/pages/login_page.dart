@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/pages/reset_password_page.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/pages/signup_page.dart';
-import 'package:frontend/pages/profile_edit_page.dart';
-import 'package:frontend/pages/running_session_page.dart';
+import 'package:frontend/pages/welcome_page.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   String errorMessage = '';
 
+  /// 로그인 로직
   Future<void> _login(String username, String password) async {
     print("Login method called");
     print("Attempting login with:");
@@ -43,24 +44,11 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('user_id', data['user_id']);
         await prefs.setString('username', username); // 입력한 username 저장
 
-        // 첫 로그인 여부 확인 및 처리
-        bool firstLogin = prefs.getBool('first_login') ?? true;
-        print("Is first login: $firstLogin");
-
-        if (firstLogin) {
-          await prefs.setBool('first_login', false);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => ProfileEditPage()),
-          );
-          print("Navigating to Profile Edit Page.");
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => RunningSessionPage()),
-          );
-          print("Navigating to Running Session Page.");
-        }
+        // 로그인 성공 후 WelcomePage로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => WelcomePage()),
+        );
       } else {
         throw Exception(
             'Login failed with status code: ${response.statusCode}');
@@ -76,45 +64,131 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Login'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _login(
-                usernameController.text,
-                passwordController.text,
+          children: [
+            Container(
+              width: 428,
+              height: 926,
+              clipBehavior: Clip.antiAlias,
+              decoration: ShapeDecoration(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
               ),
-              child: Text('Login'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignupPage()),
-                );
-              },
-              child: Text('Don\'t have an account? Sign up here.'),
-            ),
-            if (errorMessage.isNotEmpty)
-              Text(
-                errorMessage,
-                style: TextStyle(color: Colors.red),
+              child: Stack(
+                children: [
+                  // 이메일 입력 필드
+                  Positioned(
+                    left: 42,
+                    top: 324,
+                    child: SizedBox(
+                      width: 329,
+                      height: 53,
+                      child: TextField(
+                        controller: usernameController,
+                        decoration: InputDecoration(
+                          hintText: '아이디',
+                          hintStyle: TextStyle(
+                            color: Colors.black.withOpacity(0.7),
+                            fontSize: 18,
+                            fontFamily: 'Lato',
+                            fontWeight: FontWeight.w700,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12.0, horizontal: 20.0),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: Color(0xFFEC6E4F),
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: Color(0xFFEC6E4F),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 비밀번호 입력 필드
+                  Positioned(
+                    left: 42,
+                    top: 402,
+                    child: SizedBox(
+                      width: 329,
+                      height: 53,
+                      child: TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        decoration: InputDecoration(
+                          hintText: '비밀번호',
+                          hintStyle: TextStyle(
+                            color: Colors.black.withOpacity(0.7),
+                            fontSize: 18,
+                            fontFamily: 'Lato',
+                            fontWeight: FontWeight.w700,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12.0, horizontal: 20.0),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: Color(0xFFEC6E4F),
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide(
+                              color: Color(0xFFEC6E4F),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 로그인 버튼
+                  Positioned(
+                    left: 48,
+                    top: 509,
+                    child: SizedBox(
+                      width: 317,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () => _login(
+                          usernameController.text,
+                          passwordController.text,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEC6E4F),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                        ),
+                        child: const Text(
+                          '로그인',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontFamily: 'Lato',
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ),
           ],
         ),
       ),
