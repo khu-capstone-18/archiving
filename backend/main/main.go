@@ -29,7 +29,6 @@ func main() {
 	r.HandleFunc("/auth/logout", handler.LogoutHandler).Methods("POST")
 	r.HandleFunc("/{any:.+}", handler.OptionHandler).Methods("OPTIONS")
 	r.HandleFunc("/competitions", handler.CompetitionHandler).Methods("GET")
-	r.HandleFunc("/competition", handler.PostCompetitionHandler).Methods("POST")
 
 	r.HandleFunc("/users/{userId}/profile", handler.ProfileHandler).Methods("GET")
 	r.HandleFunc("/profile", handler.UpdateProfileHandler).Methods("PUT")

@@ -1,7 +1,6 @@
 package competition
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -13,17 +12,16 @@ import (
 )
 
 type Competition struct {
-	Name     string `json:"competition_name"`
 	Date     string `json:"date"`
-	Details  string `json:"details"`
-	Location struct {
-		Latitude  string `json:"latitude"`
-		Longitude string `json:"longitude"`
-	} `json:"location"`
-	Link string `json:"registration_link"`
+	Day      string `json:"day"`
+	Name     string `json:"name"`
+	Location string `json:"location"`
+	Holder   string `json:"holder"`
+	Phone    string `json:"phone"`
 }
 
-func GetCompetitionsFromWebsite(url string) error {
+func GetCompetitionsFromWebsite(url string) ([]Competition, error) {
+	competitions := []Competition{}
 	res, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -46,36 +44,45 @@ func GetCompetitionsFromWebsite(url string) error {
 		log.Fatal(err)
 	}
 
-	doc.Find("p table tbody tr td p table tbody tr td table tbody").Each(func(index int, row *goquery.Selection) {
-		row.Find("tr").Each(func(i int, r *goquery.Selection) {
-			r.Find("td").Each(func(i2 int, r2 *goquery.Selection) {
-				if i2 == 0 && i%2 != 1 {
-					date := r2.Find("div b").Eq(0).Text()
-					day := r2.Find("div font").Eq(1).Text()
-					fmt.Println("Date:", date)
-					fmt.Println("Day:", day)
-				}
-				if i2 == 1 {
-					name := r2.Find("b font a").Eq(0).Text()
-					fmt.Println("Name:", name)
-				}
-				if i2 == 2 {
-					l := r2.Find("div").Eq(0).Text()
-					fmt.Println("Location:", l)
-				}
-				if i2 == 3 {
-					h := r2.Find("div").Eq(0).Text()
-					before, after, _ := strings.Cut(h, "\t")
-					before, _ = strings.CutSuffix(before, "\n")
-					after, _ = strings.CutSuffix(after, "\n")
-					after, _ = strings.CutPrefix(after, " ")
-					before, _ = strings.CutPrefix(before, " ")
-					fmt.Println("Holder:", before)
-					fmt.Println("Phone:", after)
-				}
+	doc.Find("p table tbody tr td p table tbody tr td table").Each(func(index int, row *goquery.Selection) {
+		if index == 5 {
+			row.Find("tbody").Each(func(index2 int, r3 *goquery.Selection) {
+				r3.Find("tr").Each(func(i int, r *goquery.Selection) {
+					tmp := Competition{}
+					r.Find("td").Each(func(i2 int, r2 *goquery.Selection) {
+						if i2 == 0 && i%2 != 1 {
+							date := r2.Find("div b").Eq(0).Text()
+							day := r2.Find("div font").Eq(1).Text()
+							if day == "" || date == "" {
+							}
+							tmp.Date = date
+							tmp.Day = day
+						}
+						if i2 == 1 {
+							name := r2.Find("b font a").Eq(0).Text()
+							tmp.Name = name
+						}
+						if i2 == 2 {
+							l := r2.Find("div").Eq(0).Text()
+							tmp.Location = l
+						}
+						if i2 == 3 {
+							h := r2.Find("div").Eq(0).Text()
+							before, after, _ := strings.Cut(h, "\t")
+							before, _ = strings.CutSuffix(before, "\n")
+							after, _ = strings.CutSuffix(after, "\n")
+							after, _ = strings.CutPrefix(after, " ")
+							before, _ = strings.CutPrefix(before, " ")
+							tmp.Holder = before
+							tmp.Phone = after
+						}
+					})
+					if tmp.Name != "" {
+						competitions = append(competitions, tmp)
+					}
+				})
 			})
-		})
+		}
 	})
-
-	return nil
+	return competitions, nil
 }
