@@ -67,8 +67,8 @@ func GetCourses() ([]*model.CourseTest, error) {
 	return courses, nil
 }
 
-func CreateCourseEnd(public bool, courseId string) error {
-	if _, err := db.Exec(`UPDATE courses SET public = ` + strconv.FormatBool(public) + ` WHERE id = '` + courseId + `'`); err != nil {
+func CreateCourseEnd(public bool, courseId, courseName string) error {
+	if _, err := db.Exec(`UPDATE courses SET name = '` + courseName + `', public = ` + strconv.FormatBool(public) + ` WHERE id = '` + courseId + `'`); err != nil {
 		return err
 	}
 

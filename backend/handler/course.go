@@ -231,7 +231,7 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repository.CreateCourseEnd(req.Public, req.CourseID)
+	err = repository.CreateCourseEnd(req.Public, req.CourseID, req.CourseName)
 	if err != nil {
 		fmt.Println("ERR CREATECOURSESTESTEND : ", err)
 		w.WriteHeader(http.StatusInternalServerError)
