@@ -25,6 +25,9 @@ class WelcomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -41,33 +44,33 @@ class WelcomePage extends StatelessWidget {
               color: Colors.black.withOpacity(0.5),
             ),
           ),
-          // 텍스트
+          // 텍스트와 버튼
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
+                Text(
                   '모션업에 오신 걸 환영해요!',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: screenWidth * 0.08, // 화면 너비의 8% 크기
                     fontFamily: 'Lato',
                     fontWeight: FontWeight.w800,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
-                const Text(
+                SizedBox(height: screenHeight * 0.03), // 화면 높이의 3% 여백
+                Text(
                   '함께 멋진 배움의 여정을 시작해봐요',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: screenWidth * 0.05, // 화면 너비의 5% 크기
                     fontFamily: 'Lato',
                     fontWeight: FontWeight.w800,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 50),
+                SizedBox(height: screenHeight * 0.07), // 화면 높이의 7% 여백
                 ElevatedButton(
                   onPressed: () => navigateToNextPage(context),
                   style: ElevatedButton.styleFrom(
@@ -75,16 +78,16 @@ class WelcomePage extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 40,
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenHeight * 0.02, // 버튼 높이의 2%
+                      horizontal: screenWidth * 0.2, // 버튼 너비의 20%
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     '시작하기',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: screenWidth * 0.05, // 화면 너비의 5% 크기
                       fontFamily: 'Lato',
                       fontWeight: FontWeight.w800,
                     ),

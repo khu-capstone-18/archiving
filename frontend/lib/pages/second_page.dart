@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/pages/login_page.dart';
 import 'package:frontend/pages/signup_page.dart';
-import 'package:frontend/pages/profile_edit_page.dart';
-import 'package:frontend/pages/running_session_page.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SecondPage extends StatefulWidget {
   @override
@@ -15,7 +12,7 @@ class _SecondPageState extends State<SecondPage> {
   @override
   void initState() {
     super.initState();
-    _checkAndRequestPermission(); // 위치 권한만 확인
+    _checkAndRequestPermission(); // 위치 권한 확인
   }
 
   Future<void> _checkAndRequestPermission() async {
@@ -36,13 +33,16 @@ class _SecondPageState extends State<SecondPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
-              width: 428,
-              height: 926,
+              width: screenWidth, // 화면 너비로 조정
+              height: screenHeight, // 화면 높이로 조정
               clipBehavior: Clip.antiAlias,
               decoration: ShapeDecoration(
                 color: Colors.white,
@@ -73,8 +73,8 @@ class _SecondPageState extends State<SecondPage> {
                   ),
                   // 상단 텍스트
                   Positioned(
-                    left: 33,
-                    top: 69,
+                    left: screenWidth * 0.08, // 화면 너비의 8%만큼 왼쪽 여백
+                    top: screenHeight * 0.07, // 화면 높이의 7%만큼 위쪽 여백
                     child: Text.rich(
                       TextSpan(
                         children: [
@@ -82,20 +82,18 @@ class _SecondPageState extends State<SecondPage> {
                             text: 'MOTIONUP ',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 32,
+                              fontSize: screenWidth * 0.08, // 화면 너비 기준 글자 크기
                               fontFamily: 'Lato',
                               fontWeight: FontWeight.w800,
-                              height: 0.04,
                             ),
                           ),
                           TextSpan(
                             text: '과 함께하는\n',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 20,
+                              fontSize: screenWidth * 0.05, // 화면 너비 기준 글자 크기
                               fontFamily: 'Lato',
                               fontWeight: FontWeight.w800,
-                              height: 0.07,
                             ),
                           ),
                         ],
@@ -103,23 +101,22 @@ class _SecondPageState extends State<SecondPage> {
                     ),
                   ),
                   Positioned(
-                    left: 33,
-                    top: 111,
+                    left: screenWidth * 0.08,
+                    top: screenHeight * 0.13,
                     child: Text(
                       '러닝 챌린지',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: screenWidth * 0.05, // 화면 너비 기준 글자 크기
                         fontFamily: 'Lato',
                         fontWeight: FontWeight.w800,
-                        height: 0.07,
                       ),
                     ),
                   ),
                   // 로그인 버튼
                   Positioned(
-                    left: 38,
-                    top: 746,
+                    left: screenWidth * 0.09, // 화면 너비 기준 왼쪽 여백
+                    top: screenHeight * 0.8, // 화면 높이 기준 위치
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -132,14 +129,16 @@ class _SecondPageState extends State<SecondPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        minimumSize: Size(352, 50),
+                        padding:
+                            EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                        minimumSize: Size(
+                            screenWidth * 0.82, screenHeight * 0.06), // 버튼 크기
                       ),
                       child: Text(
                         '로그인',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20,
+                          fontSize: screenWidth * 0.05,
                           fontFamily: 'Lato',
                           fontWeight: FontWeight.w800,
                         ),
@@ -148,8 +147,8 @@ class _SecondPageState extends State<SecondPage> {
                   ),
                   // 회원가입 버튼
                   Positioned(
-                    left: 38,
-                    top: 806,
+                    left: screenWidth * 0.09,
+                    top: screenHeight * 0.88,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -162,14 +161,16 @@ class _SecondPageState extends State<SecondPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        padding: EdgeInsets.symmetric(vertical: 15),
-                        minimumSize: Size(352, 50),
+                        padding:
+                            EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+                        minimumSize:
+                            Size(screenWidth * 0.82, screenHeight * 0.06),
                       ),
                       child: Text(
                         '회원가입',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20,
+                          fontSize: screenWidth * 0.05,
                           fontFamily: 'Lato',
                           fontWeight: FontWeight.w800,
                         ),

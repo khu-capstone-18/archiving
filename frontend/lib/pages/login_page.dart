@@ -63,13 +63,16 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
-              width: 428,
-              height: 926,
+              width: screenWidth, // 화면 너비로 조정
+              height: screenHeight, // 화면 높이로 조정
               clipBehavior: Clip.antiAlias,
               decoration: ShapeDecoration(
                 color: Colors.white,
@@ -81,23 +84,25 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   // 이메일 입력 필드
                   Positioned(
-                    left: 42,
-                    top: 324,
+                    left: screenWidth * 0.1, // 화면 비율에 따른 위치 조정
+                    top: screenHeight * 0.35,
                     child: SizedBox(
-                      width: 329,
-                      height: 53,
+                      width: screenWidth * 0.8, // 화면 너비의 80% 사용
+                      height: screenHeight * 0.06, // 화면 높이의 6% 사용
                       child: TextField(
                         controller: usernameController,
                         decoration: InputDecoration(
                           hintText: '아이디',
                           hintStyle: TextStyle(
                             color: Colors.black.withOpacity(0.7),
-                            fontSize: 18,
+                            fontSize: screenWidth * 0.045, // 글자 크기 비율로 설정
                             fontFamily: 'Lato',
                             fontWeight: FontWeight.w700,
                           ),
                           contentPadding: EdgeInsets.symmetric(
-                              vertical: 12.0, horizontal: 20.0),
+                            vertical: screenHeight * 0.015,
+                            horizontal: screenWidth * 0.05,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(
@@ -119,11 +124,11 @@ class _LoginPageState extends State<LoginPage> {
 
                   // 비밀번호 입력 필드
                   Positioned(
-                    left: 42,
-                    top: 402,
+                    left: screenWidth * 0.1,
+                    top: screenHeight * 0.45,
                     child: SizedBox(
-                      width: 329,
-                      height: 53,
+                      width: screenWidth * 0.8,
+                      height: screenHeight * 0.06,
                       child: TextField(
                         controller: passwordController,
                         obscureText: true,
@@ -131,12 +136,14 @@ class _LoginPageState extends State<LoginPage> {
                           hintText: '비밀번호',
                           hintStyle: TextStyle(
                             color: Colors.black.withOpacity(0.7),
-                            fontSize: 18,
+                            fontSize: screenWidth * 0.045,
                             fontFamily: 'Lato',
                             fontWeight: FontWeight.w700,
                           ),
                           contentPadding: EdgeInsets.symmetric(
-                              vertical: 12.0, horizontal: 20.0),
+                            vertical: screenHeight * 0.015,
+                            horizontal: screenWidth * 0.05,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(
@@ -158,11 +165,11 @@ class _LoginPageState extends State<LoginPage> {
 
                   // 로그인 버튼
                   Positioned(
-                    left: 48,
-                    top: 509,
+                    left: screenWidth * 0.1,
+                    top: screenHeight * 0.55,
                     child: SizedBox(
-                      width: 317,
-                      height: 50,
+                      width: screenWidth * 0.8,
+                      height: screenHeight * 0.06,
                       child: ElevatedButton(
                         onPressed: () => _login(
                           usernameController.text,
@@ -174,11 +181,11 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(40),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           '로그인',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: screenWidth * 0.05,
                             fontFamily: 'Lato',
                             fontWeight: FontWeight.w800,
                           ),
