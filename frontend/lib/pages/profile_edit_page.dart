@@ -43,14 +43,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
       // first_login 값을 false로 설정
       await prefs.setBool('first_login', false);
-      print("프로필 업데이트 완료: first_login 상태를 false로 설정");
 
-      // SharedPreferences 상태 디버깅
-      print("프로필 업데이트 후 SharedPreferences 상태:");
-      print(" - token: ${prefs.getString('token')}");
-      print(" - first_login: ${prefs.getBool('first_login')}");
-
-      print("Navigating to RunningSessionPage after profile update.");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -61,7 +54,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       setState(() {
         errorMessage = 'Profile update failed. Please try again.';
       });
-      print("Profile update failed with status code: ${response.statusCode}");
     }
   }
 
@@ -73,34 +65,162 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit Profile'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: profileImageController,
-              decoration: InputDecoration(labelText: 'Profile Image URL'),
-            ),
-            TextField(
-              controller: weeklyGoalController,
-              decoration: InputDecoration(labelText: 'Weekly Goal'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: updateProfile,
-              child: Text('Update Profile'),
-            ),
-            if (errorMessage.isNotEmpty)
-              Text(
-                errorMessage,
-                style: TextStyle(color: Colors.red),
+      body: SingleChildScrollView(
+        child: Container(
+          width: screenWidth,
+          height: screenHeight,
+          decoration: const BoxDecoration(color: Colors.white),
+          child: Stack(
+            children: [
+              // "프로필 입력" 제목
+              Positioned(
+                left: screenWidth * 0.1,
+                top: screenHeight * 0.1,
+                child: Text(
+                  '프로필 입력',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: screenWidth * 0.07, // 화면 너비의 7%
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-          ],
+              // 설명 텍스트
+              Positioned(
+                left: screenWidth * 0.1,
+                top: screenHeight * 0.15,
+                child: Text(
+                  '프로필 이미지와 주간 목표를 입력해주세요',
+                  style: TextStyle(
+                    color: Colors.black.withOpacity(0.7),
+                    fontSize: screenWidth * 0.045, // 화면 너비의 4.5%
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+              // 프로필 이미지 입력 필드
+              Positioned(
+                left: screenWidth * 0.1,
+                top: screenHeight * 0.35,
+                child: SizedBox(
+                  width: screenWidth * 0.8, // 화면 너비의 80%
+                  height: screenHeight * 0.06, // 화면 높이의 6%
+                  child: TextField(
+                    controller: profileImageController,
+                    decoration: InputDecoration(
+                      hintText: '프로필 이미지 URL',
+                      hintStyle: TextStyle(
+                        color: Colors.black.withOpacity(0.7),
+                        fontSize: screenWidth * 0.045,
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.w700,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.015,
+                        horizontal: screenWidth * 0.05,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEC6E4F),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEC6E4F),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // 주간 목표 입력 필드
+              Positioned(
+                left: screenWidth * 0.1,
+                top: screenHeight * 0.45,
+                child: SizedBox(
+                  width: screenWidth * 0.8,
+                  height: screenHeight * 0.06,
+                  child: TextField(
+                    controller: weeklyGoalController,
+                    decoration: InputDecoration(
+                      hintText: '주간 목표 (km)',
+                      hintStyle: TextStyle(
+                        color: Colors.black.withOpacity(0.7),
+                        fontSize: screenWidth * 0.045,
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.w700,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.015,
+                        horizontal: screenWidth * 0.05,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEC6E4F),
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFEC6E4F),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // 업데이트 버튼
+              Positioned(
+                left: screenWidth * 0.1,
+                top: screenHeight * 0.55,
+                child: SizedBox(
+                  width: screenWidth * 0.8,
+                  height: screenHeight * 0.06,
+                  child: ElevatedButton(
+                    onPressed: updateProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEC6E4F),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                    ),
+                    child: Text(
+                      '프로필 업데이트',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: screenWidth * 0.05,
+                        fontFamily: 'Lato',
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // 에러 메시지 표시
+              if (errorMessage.isNotEmpty)
+                Positioned(
+                  left: screenWidth * 0.1,
+                  top: screenHeight * 0.65,
+                  child: Text(
+                    errorMessage,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

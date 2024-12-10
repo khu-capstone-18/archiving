@@ -14,6 +14,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
   final ApiService apiService = ApiService();
   GoogleMapController? mapController;
   List<LatLng> route = [];
+  Map<MarkerId, Marker> markers = {};
   bool isCreatingCourse = false;
   String? courseId;
   TextEditingController courseNameController = TextEditingController();
@@ -23,6 +24,46 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
   String currentPace = "0:00";
   String totalDistance = "0.0 km";
   String elapsedTime = "0:00";
+
+  @override
+  void initState() {
+    super.initState();
+    _setInitialLocation(); // 초기 위치 설정
+  }
+
+  Future<void> _setInitialLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // 지도 카메라 위치를 초기화
+      if (mapController != null) {
+        mapController?.animateCamera(
+          CameraUpdate.newLatLng(
+            LatLng(position.latitude, position.longitude),
+          ),
+        );
+      }
+
+      // 마커 추가
+      final markerId = MarkerId("initial_location");
+      final marker = Marker(
+        markerId: markerId,
+        position: LatLng(position.latitude, position.longitude),
+        infoWindow: InfoWindow(title: "Initial Location"),
+      );
+
+      setState(() {
+        markers[markerId] = marker;
+      });
+    } catch (e) {
+      print("Error setting initial location: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to set initial location.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +77,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
             child: GoogleMap(
               onMapCreated: (GoogleMapController controller) {
                 mapController = controller;
+                _setInitialLocation();
               },
               initialCameraPosition: CameraPosition(
                 target: LatLng(37.7749, -122.4194), // 샘플 초기 위치
@@ -48,6 +90,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
                   color: Colors.blue,
                 ),
               },
+              markers: markers.values.toSet(), // 마커 추가
             ),
           ),
           Padding(
@@ -145,6 +188,27 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
     }
   }
 
+  void _addMarker(Position position) {
+    final markerId = MarkerId("current_location");
+    final marker = Marker(
+      markerId: markerId,
+      position: LatLng(position.latitude, position.longitude),
+      infoWindow: InfoWindow(title: "Current Location"),
+    );
+
+    setState(() {
+      markers[markerId] = marker;
+    });
+  }
+
+  void _updateMapLocation(Position position) {
+    mapController?.animateCamera(
+      CameraUpdate.newLatLng(
+        LatLng(position.latitude, position.longitude),
+      ),
+    );
+  }
+
   void _navigateBack() {
     print("Navigating back to RunningSessionPage with success.");
     Navigator.pop(context, true);
@@ -171,6 +235,9 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         );
 
         setState(() {
+          route.add(LatLng(position.latitude, position.longitude));
+          _addMarker(position); // 위치마다 마커 갱신
+          _updateMapLocation(position);
           currentPace =
               response['current_pace']?.toString() ?? "0"; // int -> String
           totalDistance =

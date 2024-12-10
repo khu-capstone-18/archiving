@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // SharedPreferences 추가
 
 class ApiService {
-  final String baseUrl = "http://localhost:8080"; // PC의 IPv4 주소
+  final String baseUrl = "http://172.30.1.79:8080"; // PC의 IPv4 주소
 
   // 회원가입
   Future<http.Response> signup(
@@ -320,6 +320,10 @@ class ApiService {
     required String token,
   }) async {
     final url = Uri.parse('$baseUrl/course/start');
+    final requestBody = jsonEncode({'location': location});
+
+    print("Start Course Request URL: $url");
+    print("Request Body: $requestBody");
 
     final response = await http.post(
       url,
@@ -327,8 +331,11 @@ class ApiService {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'location': location}),
+      body: requestBody,
     );
+
+    print("Response Status Code: ${response.statusCode}");
+    print("Response Body: ${response.body}");
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

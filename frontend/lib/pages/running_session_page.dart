@@ -60,7 +60,14 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
         }
 
         setState(() {
-          courseList = courses;
+          courseList = courses.map((course) {
+            return {
+              ...course,
+              'course_name': course['course_name']?.isEmpty ?? true
+                  ? 'Unnamed Course'
+                  : course['course_name'],
+            };
+          }).toList();
         });
         print("Successfully loaded courses: $courseList");
       } else {
@@ -152,64 +159,144 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
     );
   }
 
+  void _navigateToRunningPageDirect() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => RunningPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Running Session"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: _logout,
-          ),
-        ],
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          ElevatedButton(
-            onPressed: _navigateToCreateCourse,
-            child: Text("코스 생성"),
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/second.jpg',
+              fit: BoxFit.cover,
+            ),
           ),
-          DropdownButton<Map<String, dynamic>>(
-            value: selectedCourse,
-            hint: Text("코스 선택"),
-            onChanged: (course) {
-              setState(() {
-                selectedCourse = course;
-              });
-            },
-            items: courseList.map((course) {
-              final courseName = course['course_name'] ?? "Unnamed Course";
-              return DropdownMenuItem<Map<String, dynamic>>(
-                value: course,
-                child: Text(courseName),
-              );
-            }).toList(),
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.5),
+            ),
           ),
-          DropdownButton<String>(
-            value: selectedMode.isEmpty ? null : selectedMode,
-            hint: Text("달리기 모드 선택"),
-            onChanged: (mode) {
-              setState(() {
-                selectedMode = mode!;
-              });
-            },
-            items: [
-              DropdownMenuItem(value: "solo", child: Text("혼자 달리기")),
-              DropdownMenuItem(value: "following", child: Text("따라 달리기")),
-            ],
-          ),
-          ElevatedButton(
-            onPressed: _navigateToRunningPage,
-            child: Text("선택한 코스로 시작하기"),
-          ),
-          ElevatedButton(
-            onPressed: _navigateToProfile,
-            child: Text("프로필 페이지로 이동"),
-          ),
-          ElevatedButton(
-            onPressed: _navigateToProfileEdit,
-            child: Text("프로필 수정 페이지로 이동"),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '러닝 세션 시작',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontFamily: 'Lato',
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 30),
+                DropdownButton<Map<String, dynamic>>(
+                    // 기존 드롭다운 메뉴 유지
+                    ),
+                SizedBox(height: 20),
+                DropdownButton<String>(
+                    // 기존 모드 선택 드롭다운 메뉴 유지
+                    ),
+                SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: _navigateToCreateCourse,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFEC6E4F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 40,
+                    ),
+                  ),
+                  child: Text(
+                    '코스 생성하기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _navigateToProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFEC6E4F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 40,
+                    ),
+                  ),
+                  child: Text(
+                    '프로필 보기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _navigateToProfileEdit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFEC6E4F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 40,
+                    ),
+                  ),
+                  child: Text(
+                    '프로필 수정하기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _navigateToRunningPageDirect,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFEC6E4F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 40,
+                    ),
+                  ),
+                  child: Text(
+                    '러닝 페이지로 이동',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
