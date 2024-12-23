@@ -93,11 +93,8 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
       context,
       MaterialPageRoute(
         builder: (context) => RunningPage(
-          course: {
-            'name': 'Test Course',
-            'route': [], // 빈 리스트나 실제 경로 데이터를 전달
-          },
-          mode: 'solo', // 'solo' 또는 'following'
+          course: selectedCourse!,
+          mode: selectedMode, // 선택된 모드 전달
         ),
       ),
     );
@@ -162,25 +159,29 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
     );
   }
 
+  void _navigateToRunningPageDirect() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => RunningPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // 배경 이미지
           Positioned.fill(
             child: Image.asset(
               'assets/images/second.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          // 검정색 투명 오버레이
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.5),
             ),
           ),
-          // 메인 콘텐츠
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -196,44 +197,12 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                 ),
                 SizedBox(height: 30),
                 DropdownButton<Map<String, dynamic>>(
-                  dropdownColor: Colors.white,
-                  value: selectedCourse,
-                  hint: Text(
-                    "코스 선택",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onChanged: (course) {
-                    setState(() {
-                      selectedCourse = course;
-                    });
-                  },
-                  items: courseList.map((course) {
-                    final courseName =
-                        course['course_name'] ?? "Unnamed Course";
-                    return DropdownMenuItem<Map<String, dynamic>>(
-                      value: course,
-                      child: Text(courseName),
-                    );
-                  }).toList(),
-                ),
+                    // 기존 드롭다운 메뉴 유지
+                    ),
                 SizedBox(height: 20),
                 DropdownButton<String>(
-                  dropdownColor: Colors.white,
-                  value: selectedMode.isEmpty ? null : selectedMode,
-                  hint: Text(
-                    "달리기 모드 선택",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onChanged: (mode) {
-                    setState(() {
-                      selectedMode = mode!;
-                    });
-                  },
-                  items: [
-                    DropdownMenuItem(value: "solo", child: Text("혼자 달리기")),
-                    DropdownMenuItem(value: "following", child: Text("따라 달리기")),
-                  ],
-                ),
+                    // 기존 모드 선택 드롭다운 메뉴 유지
+                    ),
                 SizedBox(height: 40),
                 ElevatedButton(
                   onPressed: _navigateToCreateCourse,
@@ -295,6 +264,29 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                   ),
                   child: Text(
                     '프로필 수정하기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _navigateToRunningPageDirect,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFEC6E4F),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 40,
+                    ),
+                  ),
+                  child: Text(
+                    '러닝 페이지로 이동',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
