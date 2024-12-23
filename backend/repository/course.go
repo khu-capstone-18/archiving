@@ -51,16 +51,18 @@ func CreateCourseStart(crs *Course) error {
 	return nil
 }
 
-func GetCourses() ([]*model.CourseTest, error) {
+func GetCourses() ([]*model.CourseList, error) {
 	r, err := db.Query(`SELECT id, name, creator_id from courses WHERE public = true`)
 	if err != nil {
 		return nil, err
 	}
 
-	courses := []*model.CourseTest{}
+	courses := []*model.CourseList{}
 	for r.Next() {
-		crs := model.CourseTest{}
+		crs := model.CourseList{}
 		r.Scan(&crs.CourseID, &crs.CourseName, &crs.CreatorID)
+		pnts, _ := GetPoints(crs.CourseID, 0)
+		crs.Location = pnts
 		courses = append(courses, &crs)
 	}
 

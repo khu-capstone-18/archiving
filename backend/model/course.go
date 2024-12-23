@@ -26,6 +26,16 @@ type CourseTest struct {
 	Public       bool     `json:"public"`
 }
 
+type CourseList struct {
+	CreatorID    string   `json:"creator_id"`
+	CourseName   string   `json:"course_name"`
+	CourseID     string   `json:"course_id"`
+	CopyCourseID string   `json:"copy_course_id"`
+	Location     []*Point `json:"locations"`
+	CurrentTime  string   `json:"current_time"`
+	Public       bool     `json:"public"`
+}
+
 type Location struct {
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
