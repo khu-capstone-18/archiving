@@ -158,3 +158,16 @@ func GetCoursesTest(crs *model.CourseTest) (*[]*model.CourseTest, error) {
 
 // 	return &courses, nil
 // }
+
+func GetParentCourseID(id string) (string, bool, error) {
+	r := db.QueryRow(`SELECT copy_course_id FROM courses WHERE id = '` + id + `'`)
+	cid := ""
+	if err := r.Scan(&cid); err != nil {
+		return "", false, err
+	}
+
+	if cid == "" {
+		return "", false, nil
+	}
+	return cid, true, nil
+}

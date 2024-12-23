@@ -276,7 +276,6 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	courseId := vars["courseId"]
-	childId, ok := vars["childId"]
 
 	// 요청 데이터 파싱
 	req := model.Point{}
@@ -284,9 +283,6 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(b, &req)
 
 	req.CourseID = courseId
-	if ok {
-		req.CourseID = childId
-	}
 	// 다음 point 순서 계산
 	order := repository.GetLatestPointOrder(req.CourseID)
 	req.Order = order + 1
@@ -352,44 +348,14 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		childPace = int(pace)
 	}
 
-	parentDistance := 0.00
-	parentPace := 0
-	var parentElasedTime time.Duration
+	p_distance := 0.00
+	p_pace := 0
+	var p_time time.Duration
 
-	if ok {
-		parentPnts, err := repository.GetPoints(courseId, len(childPnts))
-		if err != nil {
-			fmt.Println("ERR GETTING PARENT POINTS : ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		var parentBeforeLocation model.Location
-		parentBeforeTime := time.Time{}
-		for i, p := range parentPnts {
-			if i == 1 {
-				parentBeforeLocation.Latitude = p.Location.Latitude
-				parentBeforeLocation.Longitude = p.Location.Longitude
-				continue
-			}
-
-			dst := util.CalculateDistance(
-				parentBeforeLocation,
-				model.Location{Longitude: p.Location.Longitude, Latitude: p.Location.Latitude},
-			)
-			parentDistance += dst
-
-			parentBeforeLocation.Latitude = p.Location.Latitude
-			parentBeforeLocation.Longitude = p.Location.Longitude
-
-			dur := p.CurrentTime.Sub(parentBeforeTime)
-			parentElasedTime += dur
-
-			parentBeforeTime = p.CurrentTime
-
-			pace := parentElasedTime / time.Duration(parentDistance)
-			parentPace = int(pace.Seconds())
-		}
+	found, pid := isChildCourse(courseId)
+	if found {
+		length := getCurrentPointLength(courseId)
+		p_pace, p_distance, p_time = getCurreuntRunningData(pid, length)
 	}
 
 	data := struct {
@@ -401,15 +367,79 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		GapTime       int    `json:"gap_time"`
 	}{
 		CurrentPace:   childPace,
-		GapPace:       childPace - parentPace,
+		GapPace:       childPace - p_pace,
 		TotalDistance: strconv.FormatFloat(childDistance, 'f', 2, 64),
-		GapDistance:   strconv.FormatFloat(childDistance-parentDistance, 'f', 2, 64),
+		GapDistance:   strconv.FormatFloat(childDistance-p_distance, 'f', 2, 64),
 		ElasedTime:    int(childElasedTime.Seconds()),
-		GapTime:       int(childElasedTime.Seconds() - parentElasedTime.Seconds()),
+		GapTime:       int(childElasedTime.Seconds() - p_time.Seconds()),
 	}
 
 	resp, _ := json.Marshal(data)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
+}
+
+// 만약 child 코스가 맞으면 부모 코스 id를 리턴
+func isChildCourse(id string) (bool, string) {
+	id, found, _ := repository.GetParentCourseID(id)
+	if found {
+		return true, id
+	} else {
+		return false, ""
+	}
+}
+
+func getCurreuntRunningData(id string, length int) (int, float64, time.Duration) {
+	points, _ := repository.GetPoints(id, length)
+
+	fmt.Println()
+	fmt.Println("START")
+	for _, p := range points {
+		fmt.Println(*p)
+	}
+	fmt.Println("END")
+	fmt.Println()
+
+	distance := 0.00
+	pace := 0
+	var elapsed_time time.Duration
+	var beforeLocation model.Location
+	beforeTime := time.Time{}
+	for i, p := range points {
+		if i == 0 {
+			beforeLocation.Latitude = p.Location.Latitude
+			beforeLocation.Longitude = p.Location.Longitude
+			beforeTime = p.CurrentTime
+			continue
+		}
+
+		dst := util.CalculateDistance(
+			beforeLocation,
+			model.Location{Longitude: p.Location.Longitude, Latitude: p.Location.Latitude},
+		)
+		distance += dst
+
+		beforeLocation.Latitude = p.Location.Latitude
+		beforeLocation.Longitude = p.Location.Longitude
+
+		dur := p.CurrentTime.Sub(beforeTime)
+		elapsed_time += dur
+
+		beforeTime = p.CurrentTime
+		fmt.Println("ElasedTime:", elapsed_time)
+		fmt.Println("Distance:", strconv.FormatFloat(distance, 'f', 2, 64)+"km")
+		p := (elapsed_time.Seconds()) / distance
+		if distance == 0 {
+			p = 0
+		}
+		fmt.Println("Pace:", int(p))
+		pace = int(p)
+	}
+
+	return pace, distance, elapsed_time
+}
+
+func getCurrentPointLength(id string) int {
+	return repository.GetLatestPointOrder(id)
 }
