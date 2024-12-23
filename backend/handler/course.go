@@ -51,12 +51,16 @@ func CreateChildCourseStartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	p_name := repository.GetCourseName(courseId)
+
 	resp := struct {
-		CourseID     string `json:"course_id"`
-		CopyCourseID string `json:"copy_course_id"`
+		CourseID       string `json:"course_id"`
+		CopyCourseID   string `json:"copy_course_id"`
+		CopyCourseName string `json:"copy_course_name"`
 	}{
-		CourseID:     req.ID,
-		CopyCourseID: req.CopyCourseID,
+		CourseID:       req.ID,
+		CopyCourseID:   req.CopyCourseID,
+		CopyCourseName: p_name,
 	}
 
 	data, _ := json.Marshal(resp)
@@ -177,9 +181,14 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	vars := mux.Vars(r)
+	courseId := vars["courseId"]
+
 	req := model.CourseTest{}
 	b, _ := io.ReadAll(r.Body)
 	json.Unmarshal(b, &req)
+
+	req.CourseID = courseId
 
 	pnts, err := repository.GetPoints(req.CourseID, 0)
 	if err != nil {
@@ -239,14 +248,28 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	repository.UpdateCourseRecord(req.CourseID, fmt.Sprintf("%.2f", totalDistance), totalTime)
 
+	p_pace := 0
+	p_distance := 0.00
+	var p_time time.Duration
+	found, pid := isChildCourse(req.CourseID)
+	if found {
+		p_pace, p_distance, p_time = getCurreuntRunningData(pid, 0)
+	}
+
 	resp := struct {
 		TotalPace     string        `json:"total_pace"`
 		TotalDistance string        `json:"total_distance"`
 		TotalTime     time.Duration `json:"total_time"`
+		GapPace       int           `json:"gap_pace"`
+		GapDistance   string        `json:"gap_distance"`
+		GapTime       int           `json:"gap_time"`
 	}{
 		TotalPace:     totalPace,
 		TotalDistance: fmt.Sprintf("%.2fkm", totalDistance),
 		TotalTime:     totalTime,
+		GapPace:       int(totalPaceSecond) - p_pace,
+		GapDistance:   strconv.FormatFloat(totalDistance-p_distance, 'f', 2, 64),
+		GapTime:       int(float64(totalTime) - p_time.Seconds()),
 	}
 
 	data, _ := json.Marshal(resp)

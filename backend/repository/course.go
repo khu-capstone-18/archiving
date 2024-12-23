@@ -171,3 +171,10 @@ func GetParentCourseID(id string) (string, bool, error) {
 	}
 	return cid, true, nil
 }
+
+func GetCourseName(id string) string {
+	r := db.QueryRow(`SELECT name FROM courses WHERE id = '` + id + `'`)
+	name := ""
+	r.Scan(&name)
+	return name
+}
