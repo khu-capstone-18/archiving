@@ -289,7 +289,6 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
             'longitude': point.longitude,
           };
         }).toList(),
-        currentTime: DateTime.now().toIso8601String(),
         token: token,
       );
 
