@@ -16,6 +16,7 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
   List<LatLng> route = [];
   Map<MarkerId, Marker> markers = {};
   bool isCreatingCourse = false;
+  bool showEndOverlay = false; // 반투명 화면과 종료 메시지 표시 여부
   String? courseId;
   TextEditingController courseNameController = TextEditingController();
   bool isPublic = false;
@@ -37,7 +38,6 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // 지도 카메라 위치를 초기화
       if (mapController != null) {
         mapController?.animateCamera(
           CameraUpdate.newLatLng(
@@ -46,7 +46,6 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         );
       }
 
-      // 마커 추가
       final markerId = MarkerId("initial_location");
       final marker = Marker(
         markerId: markerId,
@@ -67,22 +66,20 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
   @override
   Widget build(BuildContext context) {
+    print("현재 속도: $currentPace, 총 거리: $totalDistance, 경과 시간: $elapsedTime");
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Create Course"),
-      ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
+          Positioned.fill(
             child: GoogleMap(
-              onMapCreated: (GoogleMapController controller) {
+              onMapCreated: (controller) {
                 mapController = controller;
-                _setInitialLocation();
               },
               initialCameraPosition: CameraPosition(
-                target: LatLng(37.7749, -122.4194), // 샘플 초기 위치
+                target: LatLng(37.7749, -122.4194),
                 zoom: 14.0,
               ),
+              markers: markers.values.toSet(),
               polylines: {
                 Polyline(
                   polylineId: PolylineId("route"),
@@ -90,50 +87,127 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
                   color: Colors.blue,
                 ),
               },
-              markers: markers.values.toSet(), // 마커 추가
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: courseNameController,
-                  decoration: InputDecoration(
-                    labelText: "Course Name",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SwitchListTile(
-                  title: Text("Public Course"),
-                  value: isPublic,
-                  onChanged: (value) {
-                    setState(() {
-                      isPublic = value;
-                    });
-                  },
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                      onPressed: isCreatingCourse ? null : _startCourseCreation,
-                      child: Text("Create & Start Course"),
-                    ),
-                    ElevatedButton(
-                      onPressed: isCreatingCourse ? _endCourseCreation : null,
-                      child: Text("End Course"),
+          Positioned(
+            left: 16,
+            right: 16,
+            top: 40,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("현재 속도: $currentPace 분/킬로미터"),
+                  Text("총 거리: $totalDistance"),
+                  Text("경과 시간: $elapsedTime"),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: MediaQuery.of(context).size.width * 0.5 - 50,
+            bottom: isCreatingCourse ? 40 : 240,
+            child: GestureDetector(
+              onTap:
+                  isCreatingCourse ? _endCourseCreation : _startCourseCreation,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEC6E4F),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
                     ),
                   ],
                 ),
-                if (isCreatingCourse) ...[
-                  Text("Current Pace: $currentPace min/km"),
-                  Text("Total Distance: $totalDistance"),
-                  Text("Elapsed Time: $elapsedTime sec"),
-                ],
-              ],
+                child: Center(
+                  child: Text(
+                    isCreatingCourse ? "종료" : "시작",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
+          if (!isCreatingCourse)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 40,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: courseNameController,
+                      decoration: InputDecoration(
+                        labelText: "코스 이름",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: Text("공개 코스"),
+                      value: isPublic,
+                      activeColor: const Color(0xFFEC6E4F),
+                      activeTrackColor: const Color(0xFFF6CCC0),
+                      onChanged: (value) {
+                        setState(() {
+                          isPublic = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (showEndOverlay)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFEC6E4F),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '종료!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 48,
+                          fontFamily: 'Lato',
+                          fontWeight: FontWeight.w800,
+                          height: 1.30,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -141,13 +215,11 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
   Future<void> _startCourseCreation() async {
     try {
-      // 코스 이름 검증 및 기본값 설정
       String courseName = courseNameController.text.trim();
       if (courseName.isEmpty) {
-        courseName = "Untitled Course"; // 기본값 설정
+        courseName = "Untitled Course";
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Course name is empty. Using "Untitled Course".')),
+          SnackBar(content: Text('코스 이름이 비어있습니다. "Untitled Course"로 설정합니다.')),
         );
       }
 
@@ -174,7 +246,6 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         route.add(LatLng(position.latitude, position.longitude));
       });
 
-      // 실시간 위치 전송 시작
       _startLocationUpdates();
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -188,30 +259,65 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
     }
   }
 
-  void _addMarker(Position position) {
-    final markerId = MarkerId("current_location");
-    final marker = Marker(
-      markerId: markerId,
-      position: LatLng(position.latitude, position.longitude),
-      infoWindow: InfoWindow(title: "Current Location"),
-    );
+  Future<void> _endCourseCreation() async {
+    locationTimer?.cancel();
+    if (courseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Course creation not started yet.')),
+      );
+      return;
+    }
 
-    setState(() {
-      markers[markerId] = marker;
-    });
-  }
+    String courseName = courseNameController.text.trim();
+    if (courseName.isEmpty) {
+      courseName = "Untitled Course";
+    }
 
-  void _updateMapLocation(Position position) {
-    mapController?.animateCamera(
-      CameraUpdate.newLatLng(
-        LatLng(position.latitude, position.longitude),
-      ),
-    );
-  }
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      String? userId = prefs.getString('user_id');
 
-  void _navigateBack() {
-    print("Navigating back to RunningSessionPage with success.");
-    Navigator.pop(context, true);
+      if (token == null || userId == null) {
+        throw Exception('User token or ID not found');
+      }
+
+      await apiService.endCourse(
+        courseId: courseId!,
+        courseName: courseName,
+        public: isPublic,
+        userId: userId,
+        location: route.map((point) {
+          return {
+            'latitude': point.latitude,
+            'longitude': point.longitude,
+          };
+        }).toList(),
+        token: token,
+      );
+
+      setState(() {
+        isCreatingCourse = false;
+        route.clear();
+        showEndOverlay = true; // 반투명 화면 표시
+      });
+
+      // 2초 후 종료 화면 숨기기
+      Future.delayed(Duration(seconds: 2), () {
+        setState(() {
+          showEndOverlay = false;
+        });
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Course creation ended successfully!')),
+      );
+    } catch (e) {
+      print("Error ending course creation: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to end course creation.')),
+      );
+    }
   }
 
   void _startLocationUpdates() {
@@ -224,9 +330,11 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         String? token = prefs.getString('token');
 
-        if (token == null || courseId == null)
-          throw Exception('Token or Course ID not found');
-
+        if (token == null || courseId == null) {
+          print("Missing token or courseId. Stopping location updates.");
+          timer.cancel(); // 타이머 중단
+          return;
+        }
         final response = await apiService.sendSoloData(
           token: token,
           courseId: courseId!,
@@ -236,14 +344,13 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
 
         setState(() {
           route.add(LatLng(position.latitude, position.longitude));
-          _addMarker(position); // 위치마다 마커 갱신
-          _updateMapLocation(position);
-          currentPace =
-              response['current_pace']?.toString() ?? "0"; // int -> String
-          totalDistance =
-              response['total_distance'] ?? "0.0 km"; // string 그대로 사용
-          elapsedTime =
-              (response['elapsed_time'] ?? 0).toString(); // int -> String
+          currentPace = response['current_pace']?.toString() ?? "0:00";
+          totalDistance = response['total_distance']?.toString() ?? "0.0 km";
+          elapsedTime = response['elapsed_time']?.toString() ?? "0:00";
+
+          print("갱신된 현재 속도: $currentPace");
+          print("갱신된 총 거리: $totalDistance");
+          print("갱신된 경과 시간: $elapsedTime");
         });
       } catch (e) {
         print("Error sending solo data: $e");
@@ -252,64 +359,6 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
         );
       }
     });
-  }
-
-  Future<void> _endCourseCreation() async {
-    locationTimer?.cancel(); // 실시간 위치 전송 중단
-    if (courseId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Course creation not started yet.')),
-      );
-      return;
-    }
-
-    // 코스 이름 검증 및 기본값 설정
-    String courseName = courseNameController.text.trim();
-    if (courseName.isEmpty) {
-      courseName = "Untitled Course"; // 기본값 설정
-    }
-
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('token');
-      String? userId = prefs.getString('user_id');
-
-      if (token == null || userId == null) {
-        throw Exception('User token or ID not found');
-      }
-
-      final response = await apiService.endCourse(
-        courseId: courseId!,
-        courseName: courseName,
-        public: isPublic,
-        userId: userId,
-        location: route.map((point) {
-          return {
-            'latitude': point.latitude,
-            'longitude': point.longitude,
-          };
-        }).toList(),
-        currentTime: DateTime.now().toIso8601String(),
-        token: token,
-      );
-
-      setState(() {
-        isCreatingCourse = false;
-        route.clear();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Course created! Total Distance: ${response['total_distance']} km'),
-        ),
-      );
-    } catch (e) {
-      print("Error ending course creation: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to end course creation.')),
-      );
-    }
   }
 
   @override
