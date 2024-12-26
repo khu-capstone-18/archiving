@@ -280,6 +280,7 @@ func CreateCourseEndHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
+
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 		fmt.Println("NO JWT TOKEN EXIST ERROR")
@@ -327,14 +328,6 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println()
-	fmt.Println("START")
-	for _, p := range childPnts {
-		fmt.Println(*p)
-	}
-	fmt.Println("END")
-	fmt.Println()
-
 	childDistance := 0.00
 	childPace := 0
 	var childElasedTime time.Duration
@@ -361,15 +354,16 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		childElasedTime += dur
 
 		beforeTime = p.CurrentTime
-		fmt.Println("ElasedTime:", childElasedTime)
-		fmt.Println("Distance:", strconv.FormatFloat(childDistance, 'f', 2, 64)+"km")
 		pace := (childElasedTime.Seconds()) / childDistance
 		if childDistance == 0 {
 			pace = 0
 		}
-		fmt.Println("Pace:", int(pace))
 		childPace = int(pace)
 	}
+
+	fmt.Println("ElasedTime:", int(childElasedTime.Seconds()))
+	fmt.Println("Distance:", strconv.FormatFloat(childDistance, 'f', 2, 64)+"km")
+	fmt.Println("Pace:", int(childPace))
 
 	p_distance := 0.00
 	p_pace := 0
@@ -398,9 +392,12 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, _ := json.Marshal(data)
+
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	_, err = w.Write(resp)
+
+	fmt.Println(err)
 }
 
 // 만약 child 코스가 맞으면 부모 코스 id를 리턴
@@ -415,14 +412,6 @@ func isChildCourse(id string) (bool, string) {
 
 func getCurreuntRunningData(id string, length int) (int, float64, time.Duration) {
 	points, _ := repository.GetPoints(id, length)
-
-	fmt.Println()
-	fmt.Println("START")
-	for _, p := range points {
-		fmt.Println(*p)
-	}
-	fmt.Println("END")
-	fmt.Println()
 
 	distance := 0.00
 	pace := 0
@@ -450,13 +439,10 @@ func getCurreuntRunningData(id string, length int) (int, float64, time.Duration)
 		elapsed_time += dur
 
 		beforeTime = p.CurrentTime
-		fmt.Println("ElasedTime:", elapsed_time)
-		fmt.Println("Distance:", strconv.FormatFloat(distance, 'f', 2, 64)+"km")
 		p := (elapsed_time.Seconds()) / distance
 		if distance == 0 {
 			p = 0
 		}
-		fmt.Println("Pace:", int(p))
 		pace = int(p)
 	}
 

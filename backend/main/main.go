@@ -40,7 +40,6 @@ func main() {
 	r.HandleFunc("/course/start", handler.CreateCourseStartHandler).Methods("POST")
 	r.HandleFunc("/courses/{courseId}/child/start", handler.CreateChildCourseStartHandler).Methods("POST")
 	r.HandleFunc("/courses/{courseId}/location", handler.CreateCourseLocaionHandler).Methods("POST")
-	r.HandleFunc("/courses/{courseId}/childs/{childId}/location", handler.CreateCourseLocaionHandler).Methods("POST")
 
 	r.HandleFunc("/courses/{courseId}/end", handler.CreateCourseEndHandler).Methods("POST")
 
