@@ -5,8 +5,6 @@ import 'package:frontend/pages/profile_edit_page.dart';
 import 'package:frontend/pages/create_course_page.dart';
 import 'package:frontend/pages/solorunning_page.dart';
 import 'package:frontend/pages/followingrunning_page.dart';
-import 'package:frontend/pages/solorunning_page.dart';
-import 'package:frontend/pages/followingrunning_page.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -208,7 +206,6 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
       body: Stack(
         children: [
           // 배경 이미지
-          // 배경 이미지
           Positioned.fill(
             child: Image.asset(
               'assets/images/second.jpg',
@@ -216,13 +213,11 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
             ),
           ),
           // 검정색 투명 오버레이
-          // 검정색 투명 오버레이
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.5),
             ),
           ),
-          // 메인 콘텐츠
           // 메인 콘텐츠
           Center(
             child: Column(
@@ -382,7 +377,6 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                 SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: _startRunningSession,
-                  onPressed: _startRunningSession,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFEC6E4F),
                     shape: RoundedRectangleBorder(
@@ -394,7 +388,6 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                     ),
                   ),
                   child: Text(
-                    '달리기 시작하기',
                     '달리기 시작하기',
                     style: TextStyle(
                       color: Colors.white,

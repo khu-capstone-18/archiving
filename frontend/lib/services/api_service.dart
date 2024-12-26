@@ -197,8 +197,6 @@ class ApiService {
 
 // 따라 달리기 시작
   Future<Map<String, dynamic>> startFollowing({
-// 따라 달리기 시작
-  Future<Map<String, dynamic>> startFollowing({
     required String courseId,
     required Map<String, double> location,
     required String token,
@@ -220,19 +218,7 @@ class ApiService {
       },
       body: jsonEncode(requestBody),
     );
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(requestBody),
-    );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("Failed to start following: ${response.body}");
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -242,8 +228,6 @@ class ApiService {
 
 // 실시간 따라 달리기 데이터 전송
   Future<Map<String, dynamic>> sendFollowingData({
-    required String courseId,
-    required Map<String, double> location,
     required String courseId,
     required Map<String, double> location,
     required String token,
@@ -287,21 +271,7 @@ class ApiService {
     required String courseId,
     required Map<String, double> location,
     required String token,
-    required Map<String, double> location,
-    required String token,
   }) async {
-    final url = Uri.parse('$baseUrl/courses/$courseId/child/start');
-
-    final requestBody = {
-      'location': {
-        'latitude': location['latitude'],
-        'longitude': location['longitude'],
-      },
-    };
-
-    print("혼자 달리기 시작 요청 URL: $url");
-    print("혼자 달리기 시작 요청 데이터: ${jsonEncode(requestBody)}");
-
     final url = Uri.parse('$baseUrl/courses/$courseId/child/start');
 
     final requestBody = {
@@ -321,24 +291,18 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode(requestBody),
-      body: jsonEncode(requestBody),
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-      return jsonDecode(response.body);
     } else {
-      throw Exception("Failed to start solo running: ${response.body}");
       throw Exception("Failed to start solo running: ${response.body}");
     }
   }
 
 // 실시간 혼자 달리기 데이터 전송
   Future<Map<String, dynamic>> sendSoloRunningData({
-  Future<Map<String, dynamic>> sendSoloRunningData({
     required String courseId,
-    required Map<String, double> location,
-    required String token,
     required Map<String, double> location,
     required String token,
   }) async {
@@ -354,17 +318,6 @@ class ApiService {
     print("실시간 혼자 달리기 데이터 전송 URL: $url");
     print("실시간 혼자 달리기 요청 데이터: ${jsonEncode(requestBody)}");
 
-
-    final requestBody = {
-      'location': {
-        'latitude': location['latitude'],
-        'longitude': location['longitude'],
-      },
-    };
-
-    print("실시간 혼자 달리기 데이터 전송 URL: $url");
-    print("실시간 혼자 달리기 요청 데이터: ${jsonEncode(requestBody)}");
-
     final response = await http.post(
       url,
       headers: {
@@ -372,29 +325,21 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode(requestBody),
-      body: jsonEncode(requestBody),
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
-      return jsonDecode(response.body);
     } else {
-      throw Exception("Failed to send solo running data: ${response.body}");
       throw Exception("Failed to send solo running data: ${response.body}");
     }
   }
 
 // 달리기 종료
   Future<Map<String, dynamic>> endRunning({
-  Future<Map<String, dynamic>> endRunning({
     required String courseId,
     required String courseName,
     required bool isPublic,
-    required String courseName,
-    required bool isPublic,
     required String userId,
-    required List<Map<String, double>> location,
-    required String token,
     required List<Map<String, double>> location,
     required String token,
   }) async {
@@ -407,15 +352,6 @@ class ApiService {
       'location': location,
     };
 
-    final url = Uri.parse('$baseUrl/courses/$courseId/end');
-
-    final requestBody = {
-      'course_name': courseName,
-      'public': isPublic,
-      'user_id': userId,
-      'location': location,
-    };
-
     final response = await http.post(
       url,
       headers: {
@@ -423,13 +359,8 @@ class ApiService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode(requestBody),
-      body: jsonEncode(requestBody),
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("Failed to end running: ${response.body}");
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
@@ -534,31 +465,6 @@ class ApiService {
       return Duration(minutes: minutes, seconds: seconds);
     } else {
       throw FormatException("Invalid duration format");
-    }
-  }
-
-  Future<Map<String, dynamic>> sendSoloData({
-    required String token,
-    required String courseId,
-    required double latitude,
-    required double longitude,
-  }) async {
-    final url = Uri.parse('$baseUrl/courses/$courseId/location');
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        "location": {"latitude": latitude, "longitude": longitude},
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to send solo data');
     }
   }
 
