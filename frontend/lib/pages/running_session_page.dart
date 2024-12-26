@@ -3,7 +3,8 @@ import 'package:frontend/pages/login_page.dart';
 import 'package:frontend/pages/profile_page.dart';
 import 'package:frontend/pages/profile_edit_page.dart';
 import 'package:frontend/pages/create_course_page.dart';
-import 'package:frontend/pages/running_page.dart';
+import 'package:frontend/pages/solorunning_page.dart';
+import 'package:frontend/pages/followingrunning_page.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,8 +22,18 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
   @override
   void initState() {
     super.initState();
+    _resetState();
     _logSharedPreferencesState();
     _loadCourses();
+  }
+
+  void _resetState() {
+    // 상태 초기화 메서드
+    setState(() {
+      courseList.clear();
+      selectedCourse = null;
+      selectedMode = "";
+    });
   }
 
   Future<void> _logSharedPreferencesState() async {
@@ -42,7 +53,6 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
       if (token != null) {
         final courses = await apiService.fetchCourses(token);
 
-        // 데이터 검증 및 디버깅
         if (courses == null || courses.isEmpty) {
           print("Fetched courses are empty or null.");
           ScaffoldMessenger.of(context).showSnackBar(
@@ -51,25 +61,9 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
           return;
         }
 
-        // 각 코스 데이터의 필수 필드 확인
-        for (var course in courses) {
-          print("Course data: $course");
-          if (course['course_name'] == null || course['course_name'].isEmpty) {
-            print("Course with missing name: $course");
-          }
-        }
-
         setState(() {
-          courseList = courses.map((course) {
-            return {
-              ...course,
-              'course_name': course['course_name']?.isEmpty ?? true
-                  ? 'Unnamed Course'
-                  : course['course_name'],
-            };
-          }).toList();
+          courseList = courses;
         });
-        print("Successfully loaded courses: $courseList");
       } else {
         throw Exception('User token not found');
       }
@@ -79,25 +73,6 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
         SnackBar(content: Text('Failed to load courses. Please try again.')),
       );
     }
-  }
-
-  void _navigateToRunningPage() {
-    if (selectedCourse == null || selectedMode.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a course and mode.')),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RunningPage(
-          course: selectedCourse!,
-          mode: selectedMode, // 선택된 모드 전달
-        ),
-      ),
-    );
   }
 
   void _navigateToCreateCourse() async {
@@ -110,6 +85,7 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
     print("Returned from CreateCoursePage. courseCreated: $courseCreated");
     if (courseCreated == true) {
       print("Course creation detected. Reloading courses...");
+      _resetState();
       await _loadCourses(); // 코스 갱신
       print("Courses reloaded. Current course list: $courseList");
     }
@@ -159,29 +135,90 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
     );
   }
 
-  void _navigateToRunningPageDirect() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => RunningPage()),
-    );
+  void _startRunningSession() async {
+    if (selectedMode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a running mode.')),
+      );
+      return;
+    }
+
+    if (selectedMode == "solo" || selectedCourse == null) {
+      // 혼자 달리기
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SoloRunningPage(),
+        ),
+      );
+    } else if (selectedMode == "following" && selectedCourse != null) {
+      // 따라 달리기
+      final locations = selectedCourse!['locations'];
+
+      if (selectedCourse!['locations'] == null ||
+          selectedCourse!['locations'] is! List) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Invalid course data.')),
+        );
+        return;
+      }
+
+      final List<Map<String, double>> routeCoordinates =
+          selectedCourse!['locations'].map<Map<String, double>>((location) {
+        final lat = location['location']['latitude'] as double;
+        final lng = location['location']['longitude'] as double;
+        return {'latitude': lat, 'longitude': lng};
+      }).toList();
+
+      final String courseId = selectedCourse!['course_id'];
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FollowingRunningPage(
+            routeCoordinates: routeCoordinates,
+            courseId: courseId,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid selection.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout,
+            tooltip: "로그아웃",
+          ),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
+          // 배경 이미지
           Positioned.fill(
             child: Image.asset(
               'assets/images/second.jpg',
               fit: BoxFit.cover,
             ),
           ),
+          // 검정색 투명 오버레이
           Positioned.fill(
             child: Container(
               color: Colors.black.withOpacity(0.5),
             ),
           ),
+          // 메인 콘텐츠
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -197,12 +234,77 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                 ),
                 SizedBox(height: 30),
                 DropdownButton<Map<String, dynamic>>(
-                    // 기존 드롭다운 메뉴 유지
-                    ),
+                  dropdownColor: Colors.white, // 드롭다운 메뉴 배경색
+                  value: selectedCourse,
+                  hint: Text(
+                    "코스 선택",
+                    style: TextStyle(color: Colors.white), // 힌트 텍스트 흰색
+                  ),
+                  onChanged: (course) {
+                    setState(() {
+                      selectedCourse = course;
+                    });
+                  },
+                  items: courseList.map((course) {
+                    final courseName =
+                        course['course_name'] ?? "Unnamed Course";
+                    return DropdownMenuItem<Map<String, dynamic>>(
+                      value: course,
+                      child: Text(
+                        courseName,
+                        style: TextStyle(color: Colors.black), // 스크롤 시 텍스트 검은색
+                      ),
+                    );
+                  }).toList(),
+                  selectedItemBuilder: (BuildContext context) {
+                    return courseList.map((course) {
+                      final courseName =
+                          course['course_name'] ?? "Unnamed Course";
+                      return Text(
+                        courseName,
+                        style: TextStyle(color: Colors.white), // 선택된 텍스트 흰색
+                      );
+                    }).toList();
+                  },
+                ),
                 SizedBox(height: 20),
                 DropdownButton<String>(
-                    // 기존 모드 선택 드롭다운 메뉴 유지
+                  dropdownColor: Colors.white, // 드롭다운 메뉴 배경색
+                  value: selectedMode.isEmpty ? null : selectedMode,
+                  hint: Text(
+                    "달리기 모드 선택",
+                    style: TextStyle(color: Colors.white), // 힌트 텍스트 흰색
+                  ),
+                  onChanged: (mode) {
+                    setState(() {
+                      selectedMode = mode!;
+                    });
+                  },
+                  items: [
+                    DropdownMenuItem(
+                      value: "solo",
+                      child: Text(
+                        "혼자 달리기",
+                        style: TextStyle(color: Colors.black), // 스크롤 시 텍스트 검은색
+                      ),
                     ),
+                    DropdownMenuItem(
+                      value: "following",
+                      child: Text(
+                        "따라 달리기",
+                        style: TextStyle(color: Colors.black), // 스크롤 시 텍스트 검은색
+                      ),
+                    ),
+                  ],
+                  selectedItemBuilder: (BuildContext context) {
+                    return ["solo", "following"].map((mode) {
+                      return Text(
+                        mode == "solo" ? "혼자 달리기" : "따라 달리기",
+                        style: TextStyle(color: Colors.white), // 선택된 텍스트 흰색
+                      );
+                    }).toList();
+                  },
+                ),
                 SizedBox(height: 40),
                 ElevatedButton(
                   onPressed: _navigateToCreateCourse,
@@ -274,7 +376,7 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                 ),
                 SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _navigateToRunningPageDirect,
+                  onPressed: _startRunningSession,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFEC6E4F),
                     shape: RoundedRectangleBorder(
@@ -286,7 +388,7 @@ class _RunningSessionPageState extends State<RunningSessionPage> {
                     ),
                   ),
                   child: Text(
-                    '러닝 페이지로 이동',
+                    '달리기 시작하기',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
