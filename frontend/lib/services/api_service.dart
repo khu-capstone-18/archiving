@@ -467,29 +467,4 @@ class ApiService {
       throw FormatException("Invalid duration format");
     }
   }
-
-  Future<Map<String, dynamic>> sendSoloData({
-    required String token,
-    required String courseId,
-    required double latitude,
-    required double longitude,
-  }) async {
-    final url = Uri.parse('$baseUrl/courses/$courseId/location');
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({
-        "location": {"latitude": latitude, "longitude": longitude},
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      throw Exception('Failed to send solo data');
-    }
-  }
 }

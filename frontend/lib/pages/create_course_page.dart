@@ -335,11 +335,14 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
           timer.cancel(); // 타이머 중단
           return;
         }
-        final response = await apiService.sendSoloData(
+
+        final response = await apiService.sendSoloRunningData(
           token: token,
           courseId: courseId!,
-          latitude: position.latitude,
-          longitude: position.longitude,
+          location: {
+            'latitude': position.latitude,
+            'longitude': position.longitude,
+          },
         );
 
         setState(() {
