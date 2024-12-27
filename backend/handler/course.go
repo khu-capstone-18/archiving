@@ -372,12 +372,12 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	found, pid := isChildCourse(courseId)
 	if found {
 		length := getCurrentPointLength(courseId)
+		fmt.Println("PARENT LENGTH:", length)
 		p_pace, p_distance, p_time = getCurreuntRunningData(pid, length)
+		fmt.Println("GAP-ElasedTime:", int(p_time.Seconds()))
+		fmt.Println("GAP-Distance:", strconv.FormatFloat(p_distance, 'f', 2, 64)+"km")
+		fmt.Println("GAP-Pace:", p_pace)
 	}
-
-	fmt.Println("GAP-ElasedTime:", int(p_time.Seconds()))
-	fmt.Println("GAP-Distance:", strconv.FormatFloat(p_distance, 'f', 2, 64)+"km")
-	fmt.Println("GAP-Pace:", p_pace)
 
 	data := struct {
 		CurrentPace   int    `json:"current_pace"`
@@ -432,16 +432,29 @@ func getCurreuntRunningData(id string, length int) (int, float64, time.Duration)
 			continue
 		}
 
+		fmt.Println()
+		fmt.Println("BEFORE POINT:", beforeLocation)
+		fmt.Println("AFTER POINT:", model.Location{Longitude: p.Location.Longitude, Latitude: p.Location.Latitude})
+		fmt.Println()
+
 		dst := util.CalculateDistance(
 			beforeLocation,
 			model.Location{Longitude: p.Location.Longitude, Latitude: p.Location.Latitude},
 		)
 		distance += dst
 
+		fmt.Println("dst:", dst)
+
 		beforeLocation.Latitude = p.Location.Latitude
 		beforeLocation.Longitude = p.Location.Longitude
 
+		fmt.Println("BEFORE TIME:", beforeTime.String())
+		fmt.Println("AFTER TIME:", p.CurrentTime.String())
+
 		dur := p.CurrentTime.Sub(beforeTime)
+
+		fmt.Print("dur:", int(dur.Seconds()))
+
 		elapsed_time += dur
 
 		beforeTime = p.CurrentTime
