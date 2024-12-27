@@ -375,6 +375,10 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 		p_pace, p_distance, p_time = getCurreuntRunningData(pid, length)
 	}
 
+	fmt.Println("GAP-ElasedTime:", int(p_time.Seconds()))
+	fmt.Println("GAP-Distance:", strconv.FormatFloat(p_distance, 'f', 2, 64)+"km")
+	fmt.Println("GAP-Pace:", p_pace)
+
 	data := struct {
 		CurrentPace   int    `json:"current_pace"`
 		GapPace       int    `json:"gap_pace"`
@@ -392,6 +396,8 @@ func CreateCourseLocaionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, _ := json.Marshal(data)
+
+	fmt.Println(data)
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
